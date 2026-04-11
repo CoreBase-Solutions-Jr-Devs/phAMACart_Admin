@@ -11,6 +11,9 @@ export const PROTECTED_ROUTES = {
   OVERVIEW: "/overview",
   APIKEYS: "/api-keys",
   PRODUCTS: "/products",
+  CATEGORIES: "/categories",
+  BANNER: "/banner",
+  BRANDS: "/brands",
   DOCS: "/docs",
   SETTINGS: "/settings",
 };

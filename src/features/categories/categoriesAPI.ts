@@ -21,7 +21,6 @@ export const categoriesApi = apiClient.injectEndpoints({
       }),
       providesTags: ["categories"],
     }),
-
     /**
      * TREE categories (hierarchical version)
      */
@@ -32,10 +31,21 @@ export const categoriesApi = apiClient.injectEndpoints({
       }),
       providesTags: ["categories"],
     }),
+    /**
+     * DELETE category
+     */
+    deleteCategory: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["categories"],
+    }),
   }),
 });
 
 export const {
   useGetCategoriesFlatQuery,
   useGetCategoriesTreeQuery,
+  useDeleteCategoryMutation,
 } = categoriesApi;

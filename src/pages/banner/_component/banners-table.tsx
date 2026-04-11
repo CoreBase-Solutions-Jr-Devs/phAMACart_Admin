@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { DataTable } from "@/components/data-table";
 
-import {
-  useDeleteCategoryMutation,
-  useGetCategoriesFlatQuery,
-} from "@/features/categories/categoriesAPI";
-import { categoryColumn } from "./columns";
+import { useDeleteCategoryMutation } from "@/features/categories/categoriesAPI";
+// import { categoryColumn } from "./columns";
 import { Input } from "@/components/ui/input";
+import { bannerColumn } from "./columns";
+import { useGetBannersQuery } from "@/features/banner/bannerAPI";
 // import { PriceSlider } from "@/components/ui/price-slider";
 // import CategoryTreeCombobox from "@/components/categories/CategoryTreeCombobox";
 
-const CategoriesTable = () => {
+const BannersTable = () => {
   const [filter, setFilter] = useState({
     search: "",
     pageNumber: 1,
@@ -35,20 +34,20 @@ const CategoriesTable = () => {
   //   pageSize: filter.pageSize,
   // });
 
-  const { data: categoriesData, isFetching } = useGetCategoriesFlatQuery();
+  const { data, isFetching } = useGetBannersQuery();
 
   const [deleteCategoryMutation] = useDeleteCategoryMutation();
 
   // const products = data?.products.data || [];
-  const categories = categoriesData?.categories || [];
+  // const categories = categoriesData?.categories || [];
 
   /* =========================
      PAGINATION
   ========================= */
 
   const pagination = {
-    totalCount: categories.length || 0,
-    totalPages: Math.ceil((categories.length || 0) / filter.pageSize),
+    totalCount: data?.banners?.length || 0,
+    totalPages: Math.ceil((data?.banners?.length || 0) / filter.pageSize),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,
   };
@@ -72,18 +71,16 @@ const CategoriesTable = () => {
   };
 
   /* =========================
-     BRANDS
+     BANNERS
   ========================= */
 
-  // const brands = Array.from(
-  //   new Set(products.map((p) => p.brandName).filter((b): b is string => !!b)),
-  // );
+  const banners = data?.banners || [];
 
   /* =========================
      COLUMNS
   ========================= */
 
-  const columns = categoryColumn({
+  const columns = bannerColumn({
     onDelete: handleDelete,
     // categories,
   });
@@ -93,9 +90,8 @@ const CategoriesTable = () => {
       {/* FILTERS */}
       <div className="flex flex-col gap-4">
         <Input
-          placeholder="Search Category..."
+          placeholder="Search Banner..."
           value={filter.search}
-          disabled
           onChange={(e) =>
             setFilter((prev) => ({
               ...prev,
@@ -104,6 +100,7 @@ const CategoriesTable = () => {
             }))
           }
           className="max-w-sm"
+          disabled
         />
 
         {/* CATEGORY */}
@@ -164,12 +161,12 @@ const CategoriesTable = () => {
 
       {/* TABLE */}
       <DataTable
-        data={categories}
+        data={banners}
         columns={columns}
         isLoading={isFetching}
         selection={false}
         showSearch={false}
-        emptyTitle="No products found"
+        emptyTitle="No banners found"
         isShowPagination={true}
         pagination={pagination}
         onPageChange={handlePageChange}
@@ -179,4 +176,4 @@ const CategoriesTable = () => {
   );
 };
 
-export default CategoriesTable;
+export default BannersTable;

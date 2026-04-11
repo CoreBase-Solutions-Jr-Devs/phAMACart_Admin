@@ -5,8 +5,9 @@ import {
   useDeleteCategoryMutation,
   useGetCategoriesFlatQuery,
 } from "@/features/categories/categoriesAPI";
-import { categoryColumn } from "./columns";
+import { brandColumn } from "./columns";
 import { Input } from "@/components/ui/input";
+import { useGetBrandsQuery } from "@/features/brands/brandsAPI";
 // import { PriceSlider } from "@/components/ui/price-slider";
 // import CategoryTreeCombobox from "@/components/categories/CategoryTreeCombobox";
 
@@ -35,20 +36,20 @@ const CategoriesTable = () => {
   //   pageSize: filter.pageSize,
   // });
 
-  const { data: categoriesData, isFetching } = useGetCategoriesFlatQuery();
+  const { data, isFetching } = useGetBrandsQuery({
+    pageIndex: filter.pageNumber - 1,
+    pageSize: filter.pageSize,
+  });
 
   const [deleteCategoryMutation] = useDeleteCategoryMutation();
-
-  // const products = data?.products.data || [];
-  const categories = categoriesData?.categories || [];
 
   /* =========================
      PAGINATION
   ========================= */
 
   const pagination = {
-    totalCount: categories.length || 0,
-    totalPages: Math.ceil((categories.length || 0) / filter.pageSize),
+    totalCount: data?.brands?.count || 0,
+    totalPages: Math.ceil((data?.brands?.count || 0) / filter.pageSize),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,
   };
@@ -75,15 +76,13 @@ const CategoriesTable = () => {
      BRANDS
   ========================= */
 
-  // const brands = Array.from(
-  //   new Set(products.map((p) => p.brandName).filter((b): b is string => !!b)),
-  // );
+  const brands = data?.brands?.data || [];
 
   /* =========================
      COLUMNS
   ========================= */
 
-  const columns = categoryColumn({
+  const columns = brandColumn({
     onDelete: handleDelete,
     // categories,
   });
@@ -93,7 +92,7 @@ const CategoriesTable = () => {
       {/* FILTERS */}
       <div className="flex flex-col gap-4">
         <Input
-          placeholder="Search Category..."
+          placeholder="Search Brand..."
           value={filter.search}
           disabled
           onChange={(e) =>
@@ -164,7 +163,7 @@ const CategoriesTable = () => {
 
       {/* TABLE */}
       <DataTable
-        data={categories}
+        data={brands}
         columns={columns}
         isLoading={isFetching}
         selection={false}
