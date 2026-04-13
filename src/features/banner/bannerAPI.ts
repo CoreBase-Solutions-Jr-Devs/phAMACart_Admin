@@ -72,14 +72,9 @@ export const BannerApi = apiClient.injectEndpoints({
       query: ({ id, title, imageUrl, type }) => {
         const formData = new FormData();
 
-        formData.append(
-          "banner",
-          JSON.stringify({
-            id,
-            title,
-            type,
-          }),
-        );
+        formData.append("id", id);
+        formData.append("title", title);
+        formData.append("type", type);
 
         // Object.entries(rest).forEach(([key, value]) => {
         //   formData.append(key, value);

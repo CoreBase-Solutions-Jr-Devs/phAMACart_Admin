@@ -20,7 +20,7 @@ import { useUpdateBannerMutation } from "@/features/banner/bannerAPI";
 ========================= */
 const schema = z.object({
   title: z.string().min(1, "Name is required").max(100),
-  type: z.number().min(1, "Name is required").max(100),
+  type: z.number().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -55,6 +55,7 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
     if (banner && isOpen) {
       reset({
         title: banner.title,
+        type: banner.type,
       });
       setPreview(banner.imageUrl || null);
       setImageFile(null);
@@ -154,11 +155,7 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
           )}
 
           {/* SUBMIT */}
-          <Button
-            type="submit"
-            disabled={!isValid || isLoading}
-            className="w-full"
-          >
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </form>
