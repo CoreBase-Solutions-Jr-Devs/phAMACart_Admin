@@ -14,7 +14,7 @@ const CategoriesTable = () => {
   const [filter, setFilter] = useState({
     search: "",
     pageNumber: 1,
-    pageSize: 10,
+    pageSize: 20,
     minPrice: 0,
     maxPrice: 2000,
     categoryId: "",
@@ -169,7 +169,7 @@ const CategoriesTable = () => {
         isLoading={isFetching}
         selection={false}
         showSearch={false}
-        emptyTitle="No products found"
+        emptyTitle="No Categories found"
         isShowPagination={true}
         pagination={pagination}
         onPageChange={handlePageChange}

@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { Category } from "@/features/categories/categoriesType";
-import { ProductFormDialog } from "./product-form-dialog";
+import { CategoryFormDialog } from "./category-form-dialog";
 
 interface Props {
   onDelete: (id: string) => void;
@@ -34,20 +34,20 @@ export const categoryColumn = ({ onDelete }: Props): ColumnDef<Category>[] => [
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
-      const product = row.original;
+      const category = row.original;
 
       return (
         <div className="flex gap-2">
-          {/* <ProductFormDialog product={product} categories={categories}>
+          <CategoryFormDialog category={category}>
             <Button size="sm" variant="outline">
               <Edit size={16} />
             </Button>
-          </ProductFormDialog> */}
+          </CategoryFormDialog>
 
           <Button
             size="sm"
             variant="destructive"
-            onClick={() => onDelete(product.id)}
+            onClick={() => onDelete(category.id)}
           >
             <Trash2 size={16} />
           </Button>
