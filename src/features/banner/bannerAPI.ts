@@ -15,14 +15,23 @@ export const BannerApi = apiClient.injectEndpoints({
       Banner,
       {
         Title: string;
-        SortOrder: string;
-        Type: string;
-        StartDate: string;
-        EndDate: string;
+        SortOrder: number;
+        Type: number;
+        StartDate: Date;
+        EndDate: Date;
+        companyProfileId: string;
         ImageFile?: File[]; // ✅ IMPORTANT (plural)
       }
     >({
-      query: ({ Title, SortOrder, Type, StartDate, EndDate, ImageFile }) => {
+      query: ({
+        Title,
+        SortOrder,
+        Type,
+        StartDate,
+        EndDate,
+        ImageFile,
+        companyProfileId,
+      }) => {
         const formData = new FormData();
 
         formData.append("Title", Title);
@@ -30,6 +39,7 @@ export const BannerApi = apiClient.injectEndpoints({
         formData.append("Type", Type);
         formData.append("StartDate", StartDate);
         formData.append("EndDate", EndDate);
+        formData.append("companyProfileId", companyProfileId);
 
         // Object.entries(rest).forEach(([key, value]) => {
         //   formData.append(key, value);
@@ -55,6 +65,7 @@ export const BannerApi = apiClient.injectEndpoints({
       {
         id: string;
         title: string;
+        imageUrl: File[];
       }
     >({
       query: ({ id, title, imageUrl }) => {

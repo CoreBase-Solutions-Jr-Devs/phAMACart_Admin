@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Upload, X, ImageIcon } from "lucide-react";
 import { useCreateBannerMutation } from "@/features/banner/bannerAPI";
+import { useGetCompanyProfileQuery } from "@/features/companyProfile/companyProfile";
 // import { Banner } from "@/features/banner/bannerType";
 
 /* =========================
@@ -54,6 +55,10 @@ export const NewBannerFormDialog = ({ children }: Props) => {
 
   const [createBanner, { isLoading }] = useCreateBannerMutation();
 
+  const { data: companyData } = useGetCompanyProfileQuery();
+
+  const companyProfile = companyData?.companyProfile ?? {};
+
   const {
     register,
     handleSubmit,
@@ -90,12 +95,12 @@ export const NewBannerFormDialog = ({ children }: Props) => {
     try {
       await createBanner({
         Title: data.Title,
-        SortOrder: data.SortOrder,
-        Type: data.Type,
+        SortOrder: Number(data.SortOrder),
+        Type: Number(data.Type),
         StartDate: data.StartDate,
         EndDate: data.EndDate,
         ImageFile: imageFile ? [imageFile] : undefined,
-        companyProfileId: "",
+        companyProfileId: companyProfile.id,
       }).unwrap();
 
       setIsOpen(false);
@@ -122,10 +127,14 @@ export const NewBannerFormDialog = ({ children }: Props) => {
             <Input placeholder="Title" {...register("Title")} />
           </div>
           <div>
-            <Input placeholder="SortOrder" {...register("SortOrder")} />
+            <Input
+              type="number"
+              placeholder="SortOrder"
+              {...register("SortOrder")}
+            />
           </div>
           <div>
-            <Input placeholder="Type" {...register("Type")} />
+            <Input type="number" placeholder="Type" {...register("Type")} />
           </div>
           <div>
             <Input placeholder="StartDate" {...register("StartDate")} />

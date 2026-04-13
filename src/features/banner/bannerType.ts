@@ -1,11 +1,12 @@
 export interface Banner {
   id?: number;
   Title: string;
-  SortOrder: string;
-  Type: string;
-  StartDate: string;
-  EndDate: string;
+  SortOrder: number;
+  Type: number;
+  StartDate: Date;
+  EndDate: Date;
   companyProfileId: string;
-  imageUrl?: string;
+  imageUrl?: File[];
+  ImageFile?: File[];
   children?: Banner[];
 }
