@@ -24,6 +24,7 @@ export const apiClient = createApi({
     "apikey",
     "brands",
     "banners",
+    "company_profile",
   ], // Tag types for RTK Query
   endpoints: () => ({}), // Endpoints for RTK Query
 });
