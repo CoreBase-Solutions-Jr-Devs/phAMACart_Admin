@@ -3,6 +3,7 @@ import {
   GetCategoriesParams,
   GetCategoriesFlatResponse,
   GetCategoriesTreeResponse,
+  Category,
 } from "./categoriesType";
 
 export const categoriesApi = apiClient.injectEndpoints({
@@ -21,6 +22,54 @@ export const categoriesApi = apiClient.injectEndpoints({
       }),
       providesTags: ["categories"],
     }),
+    /**
+     * Creat categories (your new response)
+     */
+    createCategory: builder.mutation<
+      Category,
+      {
+        name?: string;
+        slug?: string;
+        description?: string;
+        parentCategoryId?: string;
+        displayOrder?: number;
+      }
+    >({
+      query: (data) => {
+        return {
+          url: "/categories",
+          method: "POST",
+          body: data,
+        };
+      },
+      invalidatesTags: ["categories"],
+    }),
+    /**
+     * Update categories (your new response)
+     */
+    updateCategory: builder.mutation<
+      Category,
+      {
+        id: string;
+        name?: string;
+        description?: string;
+      }
+    >({
+      query: ({ id, name, description }) => {
+        return {
+          url: "/categories",
+          method: "PUT",
+          body: {
+            category: {
+              id,
+              name,
+              description,
+            },
+          },
+        };
+      },
+      invalidatesTags: ["categories"],
+    }),
 
     /**
      * TREE categories (hierarchical version)
@@ -32,10 +81,23 @@ export const categoriesApi = apiClient.injectEndpoints({
       }),
       providesTags: ["categories"],
     }),
+    /**
+     * DELETE category
+     */
+    deleteCategory: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["categories"],
+    }),
   }),
 });
 
 export const {
   useGetCategoriesFlatQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
   useGetCategoriesTreeQuery,
+  useDeleteCategoryMutation,
 } = categoriesApi;

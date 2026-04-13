@@ -1,18 +1,18 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
-import { Category } from "@/features/categories/categoriesType";
-import { CategoryFormDialog } from "./category-form-dialog";
+import { Banner } from "@/features/banner/bannerType";
+import { BannerFormDialog } from "./banner-form-dialog";
 
 interface Props {
   onDelete: (id: string) => void;
   // categories: { id: string; name: string }[];
 }
 
-export const categoryColumn = ({ onDelete }: Props): ColumnDef<Category>[] => [
+export const bannerColumn = ({ onDelete }: Props): ColumnDef<Banner>[] => [
   {
-    accessorKey: "name",
-    header: "CategoryName",
+    accessorKey: "title",
+    header: "BannerName",
   },
   // {
   //   accessorKey: "categoryName",
@@ -22,32 +22,33 @@ export const categoryColumn = ({ onDelete }: Props): ColumnDef<Category>[] => [
   //   accessorKey: "brandName",
   //   header: "Brand",
   // },
-  // {
-  //   accessorKey: "price",
-  //   header: "Price",
-  //   cell: ({ row }) => {
-  //     const price = row.original.price;
-  //     return <span>KES {price}</span>;
-  //   },
-  // },
+  {
+    accessorKey: "type",
+    header: "Type",
+    cell: ({ row }) => {
+      const type = row.original.type;
+      return <span>{type}</span>;
+    },
+  },
   {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
-      const category = row.original;
+      const banner = row.original;
 
       return (
         <div className="flex gap-2">
-          <CategoryFormDialog category={category}>
+          <BannerFormDialog banner={banner}>
             <Button size="sm" variant="outline">
               <Edit size={16} />
             </Button>
-          </CategoryFormDialog>
+          </BannerFormDialog>
 
           <Button
             size="sm"
             variant="destructive"
-            onClick={() => onDelete(category.id)}
+            onClick={() => onDelete(banner.id)}
+            disabled
           >
             <Trash2 size={16} />
           </Button>

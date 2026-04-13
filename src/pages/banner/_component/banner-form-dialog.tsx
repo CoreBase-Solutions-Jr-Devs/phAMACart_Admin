@@ -12,40 +12,31 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Upload, X, ImageIcon } from "lucide-react";
-import {
-  Product,
-  useUpdateProductMutation,
-} from "@/features/products/productsAPI";
+import { Banner } from "@/features/banner/bannerType";
+import { useUpdateBannerMutation } from "@/features/banner/bannerAPI";
 
 /* =========================
    SCHEMA
 ========================= */
 const schema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
-  brandName: z.string().max(100).optional(),
-  categoryId: z.string().min(1, "Category is required"),
-  description: z.string().max(1000).optional(),
+  title: z.string().min(1, "Name is required").max(100),
+  type: z.number().min(1, "Name is required").max(100),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface Props {
-  product: Product;
-  categories: { id: string; name: string }[]; // 👈 pass from parent
+  banner?: Banner;
   children: React.ReactNode;
 }
 
-export const ProductFormDialog = ({
-  product,
-  categories,
-  children,
-}: Props) => {
+export const BannerFormDialog = ({ banner, children }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [updateProduct, { isLoading }] = useUpdateProductMutation();
+  const [updateBanner, { isLoading }] = useUpdateBannerMutation();
 
   const {
     register,
@@ -61,17 +52,14 @@ export const ProductFormDialog = ({
      INIT
   ========================= */
   useEffect(() => {
-    if (product && isOpen) {
+    if (banner && isOpen) {
       reset({
-        name: product.name,
-        brandName: product.brandName || product.externalName || "",
-        categoryId: product.categoryId,
-        description: product.description,
+        title: banner.title,
       });
-      setPreview(product.imageUrl || null);
+      setPreview(banner.imageUrl || null);
       setImageFile(null);
     }
-  }, [product, isOpen, reset]);
+  }, [banner, isOpen, reset]);
 
   /* =========================
      IMAGE HANDLING
@@ -89,7 +77,7 @@ export const ProductFormDialog = ({
 
   const clearImage = () => {
     setImageFile(null);
-    setPreview(product.imageUrl || null);
+    setPreview(banner?.imageUrl || null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -98,13 +86,11 @@ export const ProductFormDialog = ({
   ========================= */
   const onSubmit = async (data: FormValues) => {
     try {
-      await updateProduct({
-        id: product.id,
-        categoryId: data.categoryId,
-        name: data.name,
-        description: data.description,
-        brandName: data.brandName,
-        imageFiles: imageFile ? [imageFile] : undefined,
+      await updateBanner({
+        id: banner?.id || "",
+        title: data.title,
+        type: data.type,
+        imageUrl: imageFile ? [imageFile] : undefined,
       }).unwrap();
 
       setIsOpen(false);
@@ -122,46 +108,16 @@ export const ProductFormDialog = ({
 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Product</DialogTitle>
+          <DialogTitle>Edit Banner</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* NAME */}
-          <div>
-            <Input placeholder="Product Name" {...register("name")} />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
-            )}
-          </div>
-
           {/* BRAND */}
           <div>
-            <Input placeholder="Brand" {...register("brandName")} />
+            <Input placeholder="Title" {...register("title")} />
           </div>
-
-          {/* CATEGORY */}
           <div>
-            <select
-              {...register("categoryId")}
-              className="w-full border rounded-md p-2"
-            >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            {errors.categoryId && (
-              <p className="text-sm text-red-500">
-                {errors.categoryId.message}
-              </p>
-            )}
-          </div>
-
-          {/* DESCRIPTION */}
-          <div>
-            <Input placeholder="Description" {...register("description")} />
+            <Input type="number" placeholder="Type" {...register("type")} />
           </div>
 
           {/* IMAGE */}
@@ -172,10 +128,7 @@ export const ProductFormDialog = ({
             onClick={() => fileRef.current?.click()}
           >
             {preview ? (
-              <img
-                src={preview}
-                className="max-h-40 mx-auto object-contain"
-              />
+              <img src={preview} className="max-h-40 mx-auto object-contain" />
             ) : (
               <>
                 <ImageIcon className="mx-auto mb-2" />
