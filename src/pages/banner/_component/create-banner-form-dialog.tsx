@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Upload, X, ImageIcon } from "lucide-react";
 import { useCreateBannerMutation } from "@/features/banner/bannerAPI";
 import { useGetCompanyProfileQuery } from "@/features/companyProfile/companyProfile";
-import { Checkbox } from "@/components/ui/checkbox";
 // import { Banner } from "@/features/banner/bannerType";
 
 /* =========================
@@ -22,7 +21,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 ========================= */
 const schema = z.object({
   Title: z.string().min(1, "Name is required").max(100),
-  isTitleDisplayed: z.boolean().optional(),
   SortOrder: z.coerce
     .number({
       required_error: "SortOrder is required",
@@ -101,7 +99,7 @@ export const NewBannerFormDialog = ({ children }: Props) => {
         Type: Number(data.Type),
         StartDate: data.StartDate,
         EndDate: data.EndDate,
-        isTitleDisplayed: data.isTitleDisplayed,
+        // isTitleDisplayed: data.isTitleDisplayed,
         ImageFile: imageFile ? [imageFile] : undefined,
         companyProfileId: companyProfile.id,
       }).unwrap();
@@ -129,31 +127,14 @@ export const NewBannerFormDialog = ({ children }: Props) => {
           <div>
             <Input placeholder="Title" {...register("Title")} />
           </div>
-
           <div>
-            {/* <input type="checkbox" {...register("isTitleDisplayed")} />
-
-            <label className="form-check-label" htmlFor="supplier">
-              Title To Display
-            </label> */}
-            <Checkbox
-              {...register("isTitleDisplayed")}
-              aria-label="Title To Display"
-            />
-            <label className="form-check-label ms-2" htmlFor="supplier">
-              Title To Display
-            </label>
-          </div>
-
-          {/* <div>
             <Input
               type="number"
               placeholder="SortOrder"
               {...register("SortOrder")}
             />
-          </div> */}
+          </div>
 
-          {/* TYPE */}
           <div>
             <select
               {...register("Type")}
@@ -206,7 +187,11 @@ export const NewBannerFormDialog = ({ children }: Props) => {
           )}
 
           {/* SUBMIT */}
-          <Button type="submit" disabled={isLoading} className="w-full">
+          <Button
+            type="submit"
+            disabled={!isValid || isLoading}
+            className="w-full"
+          >
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </form>
