@@ -47,7 +47,7 @@ export const BannerApi = apiClient.injectEndpoints({
 
         if (ImageFile && ImageFile.length > 0) {
           ImageFile.forEach((file) => {
-            formData.append("brandImageFile", file);
+            formData.append("ImageFile", file);
           });
         }
 
