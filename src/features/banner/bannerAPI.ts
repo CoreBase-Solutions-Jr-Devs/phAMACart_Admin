@@ -20,6 +20,7 @@ export const BannerApi = apiClient.injectEndpoints({
         StartDate: Date;
         EndDate: Date;
         companyProfileId: string;
+        isTitleDisplayed: string;
         ImageFile?: File[]; // ✅ IMPORTANT (plural)
       }
     >({
@@ -29,6 +30,7 @@ export const BannerApi = apiClient.injectEndpoints({
         Type,
         StartDate,
         EndDate,
+        isTitleDisplayed,
         ImageFile,
         companyProfileId,
       }) => {
@@ -38,6 +40,7 @@ export const BannerApi = apiClient.injectEndpoints({
         formData.append("SortOrder", SortOrder);
         formData.append("Type", Type);
         formData.append("StartDate", StartDate);
+        formData.append("isTitleDisplayed", isTitleDisplayed);
         formData.append("EndDate", EndDate);
         formData.append("companyProfileId", companyProfileId);
 
