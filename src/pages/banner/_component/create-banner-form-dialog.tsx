@@ -206,11 +206,7 @@ export const NewBannerFormDialog = ({ children }: Props) => {
           )}
 
           {/* SUBMIT */}
-          <Button
-            type="submit"
-            disabled={!isValid || isLoading}
-            className="w-full"
-          >
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </form>
