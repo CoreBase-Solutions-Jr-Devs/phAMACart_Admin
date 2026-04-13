@@ -71,7 +71,10 @@ const Navbar = () => {
         <div className="w-full flex h-14 max-w-[var(--max-width)] items-center mx-auto">
           <div className="w-full flex items-center justify-between">
             {/* Left side - Logo */}
-            <NavLogoAndUser username={user?.name} handleOpen={handleOpen} />
+            <NavLogoAndUser
+              username={user?.name || user?.unique_name}
+              handleOpen={handleOpen}
+            />
 
             {/* Mobile Navigation */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -86,7 +89,7 @@ const Navbar = () => {
                       <NavLink
                         className={cn(
                           "rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-secondary hover:!text-secondary-foreground flex h-max items-center gap-2 px-2 py-1.5 font-medium sm:h-10 flex-row justify-start sm:px-4 sm:text-sm bg-transparent text-foreground",
-                          pathname === route.href && "bg-secondary"
+                          pathname === route.href && "bg-secondary",
                         )}
                         to={route.href}
                       >
@@ -118,7 +121,7 @@ const Navbar = () => {
               </Button>
 
               <UserNav
-                userName={user?.name || ""}
+                userName={user?.name || user?.unique_name || ""}
                 profilePicture={user?.profilePicture || ""}
                 onLogout={handleLogout}
               />
