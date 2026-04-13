@@ -65,10 +65,11 @@ export const BannerApi = apiClient.injectEndpoints({
       {
         id: string;
         title: string;
+        type: string;
         imageUrl: File[];
       }
     >({
-      query: ({ id, title, imageUrl }) => {
+      query: ({ id, title, imageUrl, type }) => {
         const formData = new FormData();
 
         formData.append(
@@ -76,6 +77,7 @@ export const BannerApi = apiClient.injectEndpoints({
           JSON.stringify({
             id,
             title,
+            type,
           }),
         );
 
@@ -85,7 +87,7 @@ export const BannerApi = apiClient.injectEndpoints({
 
         if (imageUrl && imageUrl.length > 0) {
           imageUrl.forEach((file) => {
-            formData.append("brandImageFile", file);
+            formData.append("imageFile", file);
           });
         }
 

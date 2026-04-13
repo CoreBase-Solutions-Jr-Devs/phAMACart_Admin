@@ -20,6 +20,7 @@ import { useUpdateBannerMutation } from "@/features/banner/bannerAPI";
 ========================= */
 const schema = z.object({
   title: z.string().min(1, "Name is required").max(100),
+  type: z.number().min(1, "Name is required").max(100),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -88,6 +89,7 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
       await updateBanner({
         id: banner?.id || "",
         title: data.title,
+        type: data.type,
         imageUrl: imageFile ? [imageFile] : undefined,
       }).unwrap();
 
@@ -113,6 +115,9 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
           {/* BRAND */}
           <div>
             <Input placeholder="Title" {...register("title")} />
+          </div>
+          <div>
+            <Input type="number" placeholder="Type" {...register("type")} />
           </div>
 
           {/* IMAGE */}
