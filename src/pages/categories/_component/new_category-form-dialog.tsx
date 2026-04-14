@@ -22,8 +22,8 @@ import {
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
   description: z.string().trim().min(1, "description is required").max(100),
-  parentCategoryId: z.string().optional(),
-  displayOrder: z.string().min(0, "Display order must be at least 0").max(100),
+  parentCategoryId: z.string().optional().nullable(),
+  // displayOrder: z.string().min(0, "Display order must be at least 0").max(100),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -55,13 +55,18 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
   ========================= */
   const onSubmit = async (data: FormValues) => {
     try {
-      await createCategory({
+      const payload: any = {
         name: data.name,
         slug: data.name.toLowerCase().split(" ").join("-"),
         description: data.description,
-        parentCategoryId: data.parentCategoryId,
-        displayOrder: Number(data.displayOrder),
-      }).unwrap();
+        // displayOrder: Number(data.displayOrder),
+      };
+
+      if (data.parentCategoryId) {
+        payload.parentCategoryId = data.parentCategoryId;
+      }
+
+      await createCategory(payload).unwrap();
 
       setIsOpen(false);
     } catch (err) {
@@ -108,7 +113,7 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
             </select>
           </div>
           {/* displayOrder */}
-          <div>
+          {/* <div>
             <Input
               type="number"
               min={0}
@@ -120,7 +125,7 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
                 {errors.displayOrder.message}
               </p>
             )}
-          </div>
+          </div> */}
 
           {/* SUBMIT */}
           <Button

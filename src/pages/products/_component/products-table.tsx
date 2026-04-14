@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DataTable } from "@/components/data-table";
 
@@ -12,6 +13,7 @@ import { productsColumns } from "./columns";
 import { Input } from "@/components/ui/input";
 import { PriceSlider } from "@/components/ui/price-slider";
 import CategoryTreeCombobox from "@/components/categories/CategoryTreeCombobox";
+import { useGetBrandsQuery } from "@/features/brands/brandsAPI";
 
 const ProductsTable = () => {
   const [filter, setFilter] = useState({
@@ -36,6 +38,11 @@ const ProductsTable = () => {
     maxPrice: filter.maxPrice,
     pageIndex: filter.pageNumber - 1,
     pageSize: filter.pageSize,
+  });
+
+  const { data: brandsData = {} } = useGetBrandsQuery({
+    pageIndex: 0,
+    pageSize: 1000,
   });
 
   const { data: categoriesData } = useGetCategoriesTreeQuery();
@@ -78,9 +85,11 @@ const ProductsTable = () => {
      BRANDS
   ========================= */
 
-  const brands = Array.from(
-    new Set(products.map((p) => p.brandName).filter((b): b is string => !!b))
-  );
+  // const brands = Array.from(
+  //   new Set(products.map((p) => p.brandName).filter((b): b is string => !!b))
+  // );
+
+  let brands = brandsData?.brands?.data || []
 
   /* =========================
      COLUMNS
@@ -134,9 +143,9 @@ const ProductsTable = () => {
           className="border rounded px-2 py-1"
         >
           <option value="">All Brands</option>
-          {brands.map((b) => (
-            <option key={b} value={b}>
-              {b}
+          {brands.map((b:any) => (
+            <option key={b.id} value={b.name}>
+              {b.name}
             </option>
           ))}
         </select>

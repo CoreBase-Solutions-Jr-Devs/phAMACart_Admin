@@ -1,10 +1,13 @@
 import { OverviewChart } from "./_component/overview-chart";
 import RecentOrders from "./_component/recent-orders";
 import StatsCards from "./_component/stats-cards";
+import { useTypedSelector } from "@/app/hook";
 // import QuickActions from "./_component/quick-actions";
 
 // ── Component ────────────────────────────────────────────────────────────────
 const Overview = () => {
+    const { user } = useTypedSelector((state) => state.auth);
+
   return (
     <div className="space-y-6 pt-5 lg:pt-0">
       {/* Header */}
@@ -12,7 +15,7 @@ const Overview = () => {
         {/* Greeting */}
         <div className="flex flex-col gap-1">
           <h1 className="font-semibold text-lg sm:text-xl">
-            Hello, John 👋
+            Hello, {user?.unique_name} 👋
           </h1>
           <p className="text-muted-foreground text-xs sm:text-sm">
             Here’s what’s happening in your store today.

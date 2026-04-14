@@ -58,6 +58,8 @@ export const productsApi = apiClient.injectEndpoints({
         price?: number;
         imageUrl?: string | null;
         imageUrls?: string[];
+        removeMainImage?: boolean;
+        removeAllImages?: boolean;
         imageFiles?: File[]; // ✅ IMPORTANT (plural)
       }
       >({
