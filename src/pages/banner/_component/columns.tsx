@@ -26,7 +26,7 @@ export const bannerColumn = ({ onDelete }: Props): ColumnDef<Banner>[] => [
     accessorKey: "type",
     header: "Type",
     cell: ({ row }) => {
-      const type = row.original.type;
+      const type = row.original.Type;
       return <span>{type}</span>;
     },
   },
@@ -47,8 +47,8 @@ export const bannerColumn = ({ onDelete }: Props): ColumnDef<Banner>[] => [
           <Button
             size="sm"
             variant="destructive"
-            onClick={() => onDelete(banner.id)}
-            disabled
+            onClick={() => banner.id && onDelete(banner.id)}
+            disabled={!banner.id}
           >
             <Trash2 size={16} />
           </Button>

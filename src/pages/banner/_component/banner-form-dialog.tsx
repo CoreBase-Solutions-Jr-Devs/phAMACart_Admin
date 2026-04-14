@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { X, ImageIcon } from "lucide-react";
 import { Banner } from "@/features/banner/bannerType";
 import { useUpdateBannerMutation } from "@/features/banner/bannerAPI";
 
@@ -20,7 +20,7 @@ import { useUpdateBannerMutation } from "@/features/banner/bannerAPI";
 ========================= */
 const schema = z.object({
   title: z.string().min(1, "Name is required").max(100),
-  type: z.number().optional(),
+  type: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -42,7 +42,7 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid },
+    formState: { },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -54,8 +54,8 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
   useEffect(() => {
     if (banner && isOpen) {
       reset({
-        title: banner.title,
-        type: banner.type,
+        title: banner.Title,
+        type: banner.Type,
       });
       setPreview(banner.imageUrl || null);
       setImageFile(null);
@@ -90,8 +90,8 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
       await updateBanner({
         id: banner?.id || "",
         title: data.title,
-        type: data.type,
-        imageUrl: imageFile ? [imageFile] : undefined,
+        type: data?.type || "",
+        imageFile: imageFile ? [imageFile] : null,
       }).unwrap();
 
       setIsOpen(false);
@@ -118,7 +118,7 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
             <Input placeholder="Title" {...register("title")} />
           </div>
           <div>
-            <Input type="number" placeholder="Type" {...register("type")} />
+            <Input type="text" placeholder="Type" {...register("type")} />
           </div>
 
           {/* IMAGE */}

@@ -23,7 +23,10 @@ export const brandsApi = apiClient.injectEndpoints({
       query: ({ id, name, brandImageFile }) => {
         const formData = new FormData();
 
-        formData.append("id", id);
+
+        if (id) {
+          formData.append("id", id);
+        }
         formData.append("name", name);
 
         // Object.entries(rest).forEach(([key, value]) => {

@@ -3,7 +3,7 @@ import { Banner } from "./bannerType";
 
 export const BannerApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
-    getBanners: builder.query({
+    getBanners: builder.query<{ banners: Banner[] }, void>({
       query: () => ({
         url: "/banners",
         method: "GET",
@@ -37,11 +37,11 @@ export const BannerApi = apiClient.injectEndpoints({
         const formData = new FormData();
 
         formData.append("Title", Title);
-        formData.append("SortOrder", SortOrder);
-        formData.append("Type", Type);
-        formData.append("StartDate", StartDate);
+        formData.append("SortOrder", SortOrder.toString());
+        formData.append("Type", Type.toString());
+        formData.append("StartDate", StartDate.toISOString());
         // formData.append("isTitleDisplayed", isTitleDisplayed);
-        formData.append("EndDate", EndDate);
+        formData.append("EndDate", EndDate.toISOString());
         formData.append("companyProfileId", companyProfileId);
 
         // Object.entries(rest).forEach(([key, value]) => {
@@ -69,10 +69,10 @@ export const BannerApi = apiClient.injectEndpoints({
         id: string;
         title: string;
         type: string;
-        imageUrl: File[];
+        imageFile: File[] | null;
       }
     >({
-      query: ({ id, title, imageUrl, type }) => {
+      query: ({ id, title, imageFile, type }) => {
         const formData = new FormData();
 
         formData.append("id", id);
@@ -83,12 +83,11 @@ export const BannerApi = apiClient.injectEndpoints({
         //   formData.append(key, value);
         // });
 
-        if (imageUrl && imageUrl.length > 0) {
-          imageUrl.forEach((file) => {
-            formData.append("imageFile", file);
-          });
-        }
-
+        if (Array.isArray(imageFile) && imageFile.length > 0) {
+        imageFile.forEach((file) => {
+          formData.append("imageFile", file);
+        });
+}
         return {
           url: "/banners",
           method: "PUT",

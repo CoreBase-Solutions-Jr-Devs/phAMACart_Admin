@@ -4,10 +4,7 @@ import {
   Package,
   Tag,
   Home,
-  Key,
   Settings,
-  ClipboardList,
-  Star,
   Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,16 +38,16 @@ const SideBar = () => {
       href: PROTECTED_ROUTES.BANNER,
       label: "Banners",
     },
-    {
-      icon: ClipboardList,
-      href: PROTECTED_ROUTES.APIKEYS,
-      label: "Orders",
-    },
-    {
-      icon: Star,
-      href: PROTECTED_ROUTES.SETTINGS,
-      label: "Reviews",
-    },
+    // {
+    //   icon: ClipboardList,
+    //   href: PROTECTED_ROUTES.APIKEYS,
+    //   label: "Orders",
+    // },
+    // {
+    //   icon: Star,
+    //   href: PROTECTED_ROUTES.SETTINGS,
+    //   label: "Reviews",
+    // },
     {
       icon: Settings,
       href: PROTECTED_ROUTES.SETTINGS,

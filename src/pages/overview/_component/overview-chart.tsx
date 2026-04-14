@@ -55,8 +55,8 @@ const chartConfig: ChartConfig = {
   revenue: { label: "Revenue", color: COLORS[1] },
 };
 
-const RANGE_OPTIONS = ["5D", "2W", "1M"] as const;
-type RangeKey = (typeof RANGE_OPTIONS)[number];
+// const RANGE_OPTIONS = ["5D", "2W", "1M"] as const;
+// type RangeKey = (typeof RANGE_OPTIONS)[number];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const formatRevenue = (value: number) =>

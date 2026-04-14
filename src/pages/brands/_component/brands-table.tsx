@@ -2,8 +2,7 @@ import { useState } from "react";
 import { DataTable } from "@/components/data-table";
 
 import {
-  useDeleteCategoryMutation,
-  useGetCategoriesFlatQuery,
+  useDeleteCategoryMutation
 } from "@/features/categories/categoriesAPI";
 import { brandColumn } from "./columns";
 import { Input } from "@/components/ui/input";
@@ -168,7 +167,7 @@ const CategoriesTable = () => {
         isLoading={isFetching}
         selection={false}
         showSearch={false}
-        emptyTitle="No products found"
+        emptyTitle="No brands found"
         isShowPagination={true}
         pagination={pagination}
         onPageChange={handlePageChange}

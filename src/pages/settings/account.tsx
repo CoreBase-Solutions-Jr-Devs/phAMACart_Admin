@@ -20,7 +20,7 @@ const Account = () => {
           <Label htmlFor="firstName">First name</Label>
           <div className="flex gap-2">
             <UserIcon className="h-4 w-4 mt-3 text-muted-foreground" />
-            <Input defaultValue={user?.name || "Unknow"} readOnly />
+            <Input defaultValue={user?.unique_name || "Unknown"} readOnly />
           </div>
         </div>
         <div className="space-y-2">

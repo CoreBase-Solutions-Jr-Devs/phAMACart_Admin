@@ -1,13 +1,13 @@
 import { useState } from "react";
 import {
-  Folder,
-  HelpCircle,
+  Package,
+  Tag,
   Home,
-  Key,
+  Settings,
+  Flag,
   Menu,
   Monitor,
   Moon,
-  Settings,
   Sun,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -37,20 +37,35 @@ const Navbar = () => {
       label: "Overview",
     },
     {
-      icon: Folder,
-      href: PROTECTED_ROUTES.FILES,
-      label: "Files",
+      icon: Package,
+      href: PROTECTED_ROUTES.PRODUCTS,
+      label: "Products",
     },
     {
-      icon: HelpCircle,
-      href: PROTECTED_ROUTES.DOCS,
-      label: "Docs",
+      icon: Tag,
+      href: PROTECTED_ROUTES.BRANDS,
+      label: "Brands",
     },
     {
-      icon: Key,
-      href: PROTECTED_ROUTES.APIKEYS,
-      label: "Api Keys",
+      icon: Tag,
+      href: PROTECTED_ROUTES.CATEGORIES,
+      label: "Categories",
     },
+    {
+      icon: Flag,
+      href: PROTECTED_ROUTES.BANNER,
+      label: "Banners",
+    },
+    // {
+    //   icon: ClipboardList,
+    //   href: PROTECTED_ROUTES.APIKEYS,
+    //   label: "Orders",
+    // },
+    // {
+    //   icon: Star,
+    //   href: PROTECTED_ROUTES.SETTINGS,
+    //   label: "Reviews",
+    // },
     {
       icon: Settings,
       href: PROTECTED_ROUTES.SETTINGS,
@@ -72,7 +87,7 @@ const Navbar = () => {
           <div className="w-full flex items-center justify-between">
             {/* Left side - Logo */}
             <NavLogoAndUser
-              username={user?.name || user?.unique_name}
+              username={user?.unique_name}
               handleOpen={handleOpen}
             />
 
@@ -121,8 +136,8 @@ const Navbar = () => {
               </Button>
 
               <UserNav
-                userName={user?.name || user?.unique_name || ""}
-                profilePicture={user?.profilePicture || ""}
+                userName={user?.unique_name || ""}
+                profilePicture={""}
                 onLogout={handleLogout}
               />
             </div>

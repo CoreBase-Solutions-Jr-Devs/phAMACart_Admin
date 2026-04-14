@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { X, ImageIcon } from "lucide-react";
 import {
   Product,
   useUpdateProductMutation,

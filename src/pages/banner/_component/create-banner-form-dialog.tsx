@@ -11,34 +11,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { X, ImageIcon } from "lucide-react";
 import { useCreateBannerMutation } from "@/features/banner/bannerAPI";
 import { useGetCompanyProfileQuery } from "@/features/companyProfile/companyProfile";
-// import { Banner } from "@/features/banner/bannerType";
 
-/* =========================
-   SCHEMA
-========================= */
+
 const schema = z.object({
   Title: z.string().min(1, "Name is required").max(100),
-  SortOrder: z.coerce
-    .number({
-      required_error: "SortOrder is required",
-    })
-    .min(0, "Must be ≥ 0")
-    .max(100, "Must be ≤ 100"),
-  Type: z.coerce
-    .number({
-      required_error: "Type is required",
-    })
-    .min(0, "Must be ≥ 0")
-    .max(100, "Must be ≤ 100"),
-  StartDate: z.coerce.date({
-    required_error: "Start date is required",
-  }),
-  EndDate: z.coerce.date({
-    required_error: "End date is required",
-  }),
+  SortOrder: z.coerce.number().min(0).max(100),
+  Type: z.coerce.number().min(0).max(100),
+  StartDate: z.coerce.date(),
+  EndDate: z.coerce.date(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -55,22 +38,18 @@ export const NewBannerFormDialog = ({ children }: Props) => {
 
   const [createBanner, { isLoading }] = useCreateBannerMutation();
 
-  const { data: companyData } = useGetCompanyProfileQuery();
-
-  const companyProfile = companyData?.companyProfile ?? {};
+  const { data: companyProfile, isLoading: isProfileLoading } =
+    useGetCompanyProfileQuery();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { isValid },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
   });
 
-  /* =========================
-     IMAGE HANDLING
-  ========================= */
   const handleFile = (file: File) => {
     setImageFile(file);
     setPreview(URL.createObjectURL(file));
@@ -88,18 +67,16 @@ export const NewBannerFormDialog = ({ children }: Props) => {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  /* =========================
-     SUBMIT
-  ========================= */
   const onSubmit = async (data: FormValues) => {
     try {
+      if (!companyProfile?.id) return;
+
       await createBanner({
         Title: data.Title,
-        SortOrder: Number(data.SortOrder),
-        Type: Number(data.Type),
+        SortOrder: data.SortOrder,
+        Type: data.Type,
         StartDate: data.StartDate,
         EndDate: data.EndDate,
-        // isTitleDisplayed: data.isTitleDisplayed,
         ImageFile: imageFile ? [imageFile] : undefined,
         companyProfileId: companyProfile.id,
       }).unwrap();
@@ -110,9 +87,6 @@ export const NewBannerFormDialog = ({ children }: Props) => {
     }
   };
 
-  /* =========================
-     UI
-  ========================= */
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -123,37 +97,25 @@ export const NewBannerFormDialog = ({ children }: Props) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* BRAND */}
-          <div>
-            <Input placeholder="Title" {...register("Title")} />
-          </div>
-          <div>
-            <Input
-              type="number"
-              placeholder="SortOrder"
-              {...register("SortOrder")}
-            />
-          </div>
+          {/* TITLE */}
+          <Input placeholder="Title" {...register("Title")} />
 
-          <div>
-            <select
-              {...register("Type")}
-              className="w-full border rounded-md p-2"
-            >
-              <option value="">Select Type</option>
-              <option value="0">Occasional</option>
-              <option value="1">Promotional </option>
-              <option value="2">Fixed </option>
-            </select>
-          </div>
-          <div>
-            <Input placeholder="StartDate" {...register("StartDate")} />
-          </div>
-          <div>
-            <Input placeholder="EndDate" {...register("EndDate")} />
-          </div>
+          {/* SORT ORDER */}
+          <Input type="number" placeholder="SortOrder" {...register("SortOrder")} />
 
-          {/* IMAGE */}
+          {/* TYPE */}
+          <select {...register("Type")} className="w-full border rounded-md p-2">
+            <option value="">Select Type</option>
+            <option value="0">Occasional</option>
+            <option value="1">Promotional</option>
+            <option value="2">Fixed</option>
+          </select>
+
+          {/* DATES */}
+          <Input type="date" {...register("StartDate")} />
+          <Input type="date" {...register("EndDate")} />
+
+          {/* IMAGE UPLOAD */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
@@ -161,7 +123,10 @@ export const NewBannerFormDialog = ({ children }: Props) => {
             onClick={() => fileRef.current?.click()}
           >
             {preview ? (
-              <img src={preview} className="max-h-40 mx-auto object-contain" />
+              <img
+                src={preview}
+                className="max-h-40 mx-auto object-contain"
+              />
             ) : (
               <>
                 <ImageIcon className="mx-auto mb-2" />
@@ -189,7 +154,7 @@ export const NewBannerFormDialog = ({ children }: Props) => {
           {/* SUBMIT */}
           <Button
             type="submit"
-            disabled={!isValid || isLoading}
+            disabled={!isValid || isLoading || isProfileLoading}
             className="w-full"
           >
             {isLoading ? "Saving..." : "Save Changes"}

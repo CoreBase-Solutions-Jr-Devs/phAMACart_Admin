@@ -1,7 +1,7 @@
 import { OverviewChart } from "./_component/overview-chart";
 import RecentOrders from "./_component/recent-orders";
 import StatsCards from "./_component/stats-cards";
-import QuickActions from "./_component/quick-actions";
+// import QuickActions from "./_component/quick-actions";
 
 // ── Component ────────────────────────────────────────────────────────────────
 const Overview = () => {
@@ -20,7 +20,7 @@ const Overview = () => {
         </div>
 
         {/* Quick Actions (right side) */}
-        <QuickActions />
+        {/* <QuickActions /> */}
       </div>
 
       {/* Stats */}

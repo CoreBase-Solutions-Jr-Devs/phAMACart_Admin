@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
-import { AUTH_ROUTES, PROTECTED_ROUTES } from "@/routes/common/routePath";
+import { useNavigate } from "react-router-dom";
+import { PROTECTED_ROUTES } from "@/routes/common/routePath";
 import { useLoginMutation } from "@/features/auth/authAPI";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
