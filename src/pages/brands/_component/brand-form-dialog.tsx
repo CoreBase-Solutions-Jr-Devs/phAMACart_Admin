@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { X, ImageIcon } from "lucide-react";
 import { Brand } from "@/features/brands/brandsType";
 import { useCreateBrandMutation } from "@/features/brands/brandsAPI";
+import { parseError } from "@/lib/parse-error";
 
 /* =========================
    SCHEMA
@@ -91,9 +93,10 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
         brandImageFile: imageFile ? [imageFile] : undefined,
       }).unwrap();
 
+      toast.success("Brand saved successfully.");
       setIsOpen(false);
     } catch (err) {
-      console.error(err);
+      toast.error(parseError(err));
     }
   };
 

@@ -1,41 +1,42 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit } from "lucide-react";
 import { Brand } from "@/features/brands/brandsType";
-import { BrandFormDialog } from "./brand-form-dialog";
+import { UpdateBrandFormDialog } from "./update-brand-form-dialog";
 
-interface Props {
-  onDelete: (id: string) => void;
-  // categories: { id: string; name: string }[];
-}
-
-export const brandColumn = ({ onDelete }: Props): ColumnDef<Brand>[] => [
+export const brandColumn = (): ColumnDef<Brand>[] => [
   {
     accessorKey: "name",
-    header: "BrandName",
+    header: "Brand Name",
   },
-  // {
-  //   accessorKey: "categoryName",
-  //   header: "Category",
-  // },
-  // {
-  //   accessorKey: "brandName",
-  //   header: "Brand",
-  // },
   {
     accessorKey: "productCount",
-    header: "ProductCount",
+    header: "Products",
     cell: ({ row }) => {
-      const productCount = row.original.productCount;
-      return <span>{productCount}</span>;
+      return <span>{row.original.productCount}</span>;
     },
   },
   {
+    accessorKey: "brandImageUrl",
+    header: "Image",
+    cell: ({ row }) => (
+      <img
+        src={row.original.brandImageUrl}
+        className="h-10 w-10 object-contain"
+      />
+    ),
+  },
+  {
     accessorKey: "isActive",
-    header: "IsActive",
+    header: "Active",
     cell: ({ row }) => {
-      const isActive = row.original.isActive;
-      return <input type="checkbox" checked={isActive} disabled />;
+      return (
+        <input
+          type="checkbox"
+          checked={row.original.isActive}
+          disabled
+        />
+      );
     },
   },
   {
@@ -46,20 +47,11 @@ export const brandColumn = ({ onDelete }: Props): ColumnDef<Brand>[] => [
 
       return (
         <div className="flex gap-2">
-          <BrandFormDialog brand={brand}>
-            <Button size="sm" variant="outline" disabled>
+          <UpdateBrandFormDialog brand={brand}>
+            <Button size="sm" variant="outline">
               <Edit size={16} />
             </Button>
-          </BrandFormDialog>
-
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => onDelete(brand.id)}
-            disabled
-          >
-            <Trash2 size={16} />
-          </Button>
+          </UpdateBrandFormDialog>
         </div>
       );
     },

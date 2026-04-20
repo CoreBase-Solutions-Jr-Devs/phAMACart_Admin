@@ -50,3 +50,8 @@ export type CurrentUserResponseType = {
     currentWorkspace?: string;
   };
 };
+
+export type RefreshTokenResponseType = {
+  accessToken: string;
+  refreshToken: string;
+};

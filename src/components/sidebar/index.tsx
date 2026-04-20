@@ -1,11 +1,12 @@
 import { PROTECTED_ROUTES } from "@/routes/common/routePath";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  Package,
-  Tag,
-  Home,
-  Settings,
-  Flag,
+  LayoutDashboard,
+  ShoppingBag,
+  Layers,
+  Megaphone,
+  Settings2,
+  Bookmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,42 +15,32 @@ const SideBar = () => {
 
   const routes = [
     {
-      icon: Home,
+      icon: LayoutDashboard,
       href: PROTECTED_ROUTES.OVERVIEW,
       label: "Overview",
     },
     {
-      icon: Package,
+      icon: ShoppingBag,
       href: PROTECTED_ROUTES.PRODUCTS,
       label: "Products",
     },
     {
-      icon: Tag,
+      icon: Bookmark,
       href: PROTECTED_ROUTES.BRANDS,
       label: "Brands",
     },
     {
-      icon: Tag,
+      icon: Layers,
       href: PROTECTED_ROUTES.CATEGORIES,
       label: "Categories",
     },
     {
-      icon: Flag,
+      icon: Megaphone,
       href: PROTECTED_ROUTES.BANNER,
       label: "Banners",
     },
-    // {
-    //   icon: ClipboardList,
-    //   href: PROTECTED_ROUTES.APIKEYS,
-    //   label: "Orders",
-    // },
-    // {
-    //   icon: Star,
-    //   href: PROTECTED_ROUTES.SETTINGS,
-    //   label: "Reviews",
-    // },
     {
-      icon: Settings,
+      icon: Settings2,
       href: PROTECTED_ROUTES.SETTINGS,
       label: "Settings",
     },

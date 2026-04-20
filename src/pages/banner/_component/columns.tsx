@@ -1,59 +1,125 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit } from "lucide-react";
 import { Banner } from "@/features/banner/bannerType";
-import { BannerFormDialog } from "./banner-form-dialog";
 
-interface Props {
-  onDelete: (id: string) => void;
-  // categories: { id: string; name: string }[];
+const getBannerTypeLabel = (type: any) => {
+  switch (type) {
+    case 0:
+    case "0":
+      return "Occasional";
+    case 1:
+    case "1":
+      return "Promotional";
+    case 2:
+    case "2":
+      return "Fixed";
+    default:
+      return "Unknown";
+  }
+};
+
+const formatDate = (date?: Date | string) => {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+interface BannerColumnOptions {
+  onEdit: (banner: Banner) => void;
 }
 
-export const bannerColumn = ({ onDelete }: Props): ColumnDef<Banner>[] => [
+export const bannerColumn = ({ onEdit }: BannerColumnOptions): ColumnDef<Banner>[] => [
+  /* =========================
+     IMAGE
+  ========================= */
+  {
+    id: "image",
+    header: "Image",
+    cell: ({ row }) => {
+      const image = row.original.imageUrl;
+      return image ? (
+        <img
+          src={image}
+          alt={row.original.title}
+          className="h-12 w-12 object-cover rounded-md border"
+        />
+      ) : (
+        <span className="text-gray-400 text-sm">No image</span>
+      );
+    },
+  },
+
+  /* =========================
+     TITLE
+  ========================= */
   {
     accessorKey: "title",
-    header: "BannerName",
+    header: "Banner Name",
+    cell: ({ row }) => (
+      <span className="font-medium">{row.original.title}</span>
+    ),
   },
-  // {
-  //   accessorKey: "categoryName",
-  //   header: "Category",
-  // },
-  // {
-  //   accessorKey: "brandName",
-  //   header: "Brand",
-  // },
+
+  /* =========================
+     TYPE
+  ========================= */
   {
     accessorKey: "type",
     header: "Type",
-    cell: ({ row }) => {
-      const type = row.original.Type;
-      return <span>{type}</span>;
-    },
+    cell: ({ row }) => (
+      <span className="px-2 py-1 text-xs rounded bg-gray-100">
+        {getBannerTypeLabel(row.original.type)}
+      </span>
+    ),
   },
+
+  /* =========================
+     START DATE
+  ========================= */
+  {
+    accessorKey: "startDate",
+    header: "Start Date",
+    cell: ({ row }) => formatDate(row.original.startDate),
+  },
+
+  /* =========================
+     END DATE
+  ========================= */
+  {
+    accessorKey: "endDate",
+    header: "End Date",
+    cell: ({ row }) => formatDate(row.original.endDate),
+  },
+
+  /* =========================
+     SORT ORDER
+  ========================= */
+  {
+    accessorKey: "sortOrder",
+    header: "Sort Order",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">{row.original.sortOrder}</span>
+    ),
+  },
+
+  /* =========================
+     ACTIONS
+  ========================= */
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => {
-      const banner = row.original;
-
-      return (
-        <div className="flex gap-2">
-          <BannerFormDialog banner={banner}>
-            <Button size="sm" variant="outline">
-              <Edit size={16} />
-            </Button>
-          </BannerFormDialog>
-
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => banner.id && onDelete(banner.id)}
-            disabled={!banner.id}
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => onEdit(row.original)}
+      >
+        <Edit size={16} />
+      </Button>
+    ),
   },
 ];

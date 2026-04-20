@@ -2,37 +2,91 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { Product } from "@/features/products/productsAPI";
-import { ProductFormDialog } from "./product-form-dialog";
 
 interface Props {
   onDelete: (id: string) => void;
-  categories: { id: string; name: string }[];
+  onEdit: (product: Product) => void;
 }
 
 export const productsColumns = ({
   onDelete,
-  categories,
+  onEdit,
 }: Props): ColumnDef<Product>[] => [
+  /* =========================
+     BASIC INFO
+  ========================= */
+
   {
     accessorKey: "name",
-    header: "Product",
+    header: "Product Name",
   },
+  /* =========================
+     CATEGORY / BRAND
+  ========================= */
+
   {
     accessorKey: "categoryName",
     header: "Category",
+    cell: ({ row }) => (
+      <span>{row.original.categoryName ?? "No Category"}</span>
+    ),
   },
   {
     accessorKey: "brandName",
     header: "Brand",
+    cell: ({ row }) => (
+      <span>{row.original.brandName ?? "No Brand"}</span>
+    ),
   },
+
+  /* =========================
+     PRICING
+  ========================= */
+
   {
     accessorKey: "price",
     header: "Price",
-    cell: ({ row }) => {
-      const price = row.original.price;
-      return <span>KES {price}</span>;
-    },
+    cell: ({ row }) => (
+      <span className="font-medium">KES {row.original.price}</span>
+    ),
   },
+
+  /* =========================
+     IMAGE
+  ========================= */
+
+  {
+    accessorKey: "imageUrl",
+    header: "Image",
+    cell: ({ row }) =>
+      row.original.imageUrl ? (
+        <img
+          src={row.original.imageUrl}
+          alt={row.original.name}
+          className="h-10 w-10 rounded object-cover"
+        />
+      ) : (
+        <span className="text-muted-foreground">No Image</span>
+      ),
+  },
+
+  /* =========================
+     FLAGS
+  ========================= */
+
+  {
+    accessorKey: "isPrescription",
+    header: "Prescription",
+    cell: ({ row }) => (
+      <span>
+        {row.original.isPrescription ? "Required" : "No"}
+      </span>
+    ),
+  },
+  /* =========================
+     ACTIONS
+  ========================= */
+
   {
     id: "actions",
     header: "Actions",
@@ -40,12 +94,14 @@ export const productsColumns = ({
       const product = row.original;
 
       return (
-        <div className="flex gap-2">
-          <ProductFormDialog product={product} categories={categories}>
-            <Button size="sm" variant="outline">
-              <Edit size={16} />
-            </Button>
-          </ProductFormDialog>
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onEdit(product)}
+          >
+            <Edit size={16} />
+          </Button>
 
           <Button
             size="sm"

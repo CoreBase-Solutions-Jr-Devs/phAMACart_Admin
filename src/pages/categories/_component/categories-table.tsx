@@ -7,8 +7,17 @@ import {
 } from "@/features/categories/categoriesAPI";
 import { categoryColumn } from "./columns";
 import { Input } from "@/components/ui/input";
-// import { PriceSlider } from "@/components/ui/price-slider";
-// import CategoryTreeCombobox from "@/components/categories/CategoryTreeCombobox";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { parseError } from "@/lib/parse-error";
 
 const CategoriesTable = () => {
   const [filter, setFilter] = useState({
@@ -21,25 +30,17 @@ const CategoriesTable = () => {
     brand: "",
   });
 
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   /* =========================
      DATA
   ========================= */
 
-  // const { data, isFetching } = useGetProductsQuery({
-  //   search: filter.search,
-  //   category: filter.categoryId || undefined,
-  //   brand: filter.brand || undefined,
-  //   minPrice: filter.minPrice,
-  //   maxPrice: filter.maxPrice,
-  //   pageIndex: filter.pageNumber - 1,
-  //   pageSize: filter.pageSize,
-  // });
-
   const { data: categoriesData, isFetching } = useGetCategoriesFlatQuery();
 
-  const [deleteCategoryMutation] = useDeleteCategoryMutation();
+  const [deleteCategoryMutation, { isLoading: isDeleting }] =
+    useDeleteCategoryMutation();
 
-  // const products = data?.products.data || [];
   const categories = categoriesData?.categories || [];
 
   /* =========================
@@ -65,19 +66,23 @@ const CategoriesTable = () => {
      DELETE
   ========================= */
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this Category?")) {
-      await deleteCategoryMutation(id);
-    }
+  // Called by the table row — opens the confirm dialog
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id);
   };
 
-  /* =========================
-     BRANDS
-  ========================= */
-
-  // const brands = Array.from(
-  //   new Set(products.map((p) => p.brandName).filter((b): b is string => !!b)),
-  // );
+  // Called when the user confirms inside the dialog
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    try {
+      await deleteCategoryMutation(pendingDeleteId).unwrap();
+      toast.success("Category deleted successfully.");
+      setPendingDeleteId(null);
+    } catch (err) {
+      toast.error(parseError(err));
+      setPendingDeleteId(null);
+    }
+  };
 
   /* =========================
      COLUMNS
@@ -85,7 +90,6 @@ const CategoriesTable = () => {
 
   const columns = categoryColumn({
     onDelete: handleDelete,
-    // categories,
   });
 
   return (
@@ -105,61 +109,6 @@ const CategoriesTable = () => {
           }
           className="max-w-sm"
         />
-
-        {/* CATEGORY */}
-        {/* <CategoryTreeCombobox
-          categories={categories}
-          value={filter.categoryId}
-          onChange={(value) =>
-            setFilter((prev) => ({
-              ...prev,
-              categoryId: value,
-              pageNumber: 1,
-            }))
-          }
-        /> */}
-
-        {/* BRAND */}
-        {/* <select
-          value={filter.brand}
-          onChange={(e) =>
-            setFilter((prev) => ({
-              ...prev,
-              brand: e.target.value,
-              pageNumber: 1,
-            }))
-          }
-          className="border rounded px-2 py-1"
-        >
-          <option value="">All Brands</option>
-          {brands.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select> */}
-
-        {/* PRICE */}
-        {/* <div className="w-64">
-          <PriceSlider
-            min={0}
-            max={2000}
-            step={10}
-            value={[filter.minPrice, filter.maxPrice]}
-            onChange={([min, max]) =>
-              setFilter((prev) => ({
-                ...prev,
-                minPrice: min,
-                maxPrice: max,
-                pageNumber: 1,
-              }))
-            }
-          />
-          <div className="flex justify-between text-xs mt-1">
-            <span>{filter.minPrice}</span>
-            <span>{filter.maxPrice}</span>
-          </div>
-        </div> */}
       </div>
 
       {/* TABLE */}
@@ -175,6 +124,40 @@ const CategoriesTable = () => {
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
       />
+
+      {/* DELETE CONFIRM DIALOG */}
+      <Dialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Category</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this category? This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingDeleteId(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

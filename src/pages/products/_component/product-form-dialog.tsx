@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
+import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,11 +11,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { X, ImageIcon, ChevronDown } from "lucide-react";
-
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,20 +20,18 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  Product,
-  useUpdateProductMutation,
-} from "@/features/products/productsAPI";
-
+import { Product, useUpdateProductMutation } from "@/features/products/productsAPI";
 import { useGetBrandsQuery } from "@/features/brands/brandsAPI";
+import { useGetLeafCategoriesQuery } from "@/features/categories/categoriesAPI";
 
-/* =========================
-   SCHEMA
-========================= */
+import MultiFileUploader, { UploadFileItem } from "@/components/upload/MultiFileUploader";
+import { parseError } from "@/lib/parse-error";
+
+/* ========================= SCHEMA ========================= */
 const schema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
+  name: z.string().max(100).optional(),
   brandName: z.string().max(100).optional(),
-  categoryId: z.string().min(1, "Category is required"),
+  categoryId: z.string().uuid("Please select a category"),
   description: z.string().max(1000).optional(),
   removeMainImage: z.boolean(),
   removeAllImages: z.boolean(),
@@ -43,173 +40,149 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 interface Props {
-  product: Product;
-  categories: { id: string; name: string }[];
-  children: React.ReactNode;
+  product: Product | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const ProductFormDialog = ({
-  product,
-  categories,
-  children,
-}: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
+export const ProductFormDialog = ({ product, open, onOpenChange }: Props) => {
+  const [files, setFiles] = useState<UploadFileItem[]>([]);
   const [updateProduct, { isLoading }] = useUpdateProductMutation();
 
-  /* =========================
-     BRANDS (PAGINATED + DYNAMIC)
-  ========================= */
-  const [brandQuery, setBrandQuery] = useState({
+  const { data: brandsData } = useGetBrandsQuery({
     pageIndex: 0,
     pageSize: 50,
     search: "",
   });
 
-  const { data: brandsData, isFetching: brandsLoading } = useGetBrandsQuery({
-    pageIndex: brandQuery.pageIndex,
-    pageSize: brandQuery.pageSize,
-    search: brandQuery.search,
-  });
+  const brands = brandsData?.brands?.data ?? [];
 
-  const brands = brandsData?.brands?.data || [];
-  const brandsCount = brandsData?.brands?.count || 0;
+  const { data: leafData } = useGetLeafCategoriesQuery();
+  const leafCategories = leafData?.categories ?? [];
 
-  /* =========================
-     FORM
-  ========================= */
   const {
     register,
     handleSubmit,
     reset,
     setValue,
     watch,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    mode: "onChange",
+    mode: "onSubmit",
+    defaultValues: {
+      name: "",
+      brandName: "",
+      categoryId: "",
+      description: "",
+      removeMainImage: false,
+      removeAllImages: false,
+    },
   });
 
-  const selectedBrand = watch("brandName");
+  const watchedValues = watch();
 
-  /* =========================
-     INIT
-  ========================= */
+  /* ========================= INIT ========================= */
   useEffect(() => {
-    if (product && isOpen) {
-      reset({
-        name: product.name,
-        brandName: product.brandName || "",
-        categoryId: product.categoryId,
-        description: product.description,
-        removeMainImage: false,
-        removeAllImages: false,
-      });
+    if (!open || !product) return;
 
-      setPreview(product.imageUrl || null);
-      setImageFile(null);
-    }
-  }, [product, isOpen, reset]);
+    reset({
+      name: product.name,
+      brandName: product.brandName ?? "",
+      categoryId: product.categoryId,
+      description: product.description,
+      removeMainImage: false,
+      removeAllImages: false,
+    });
 
-  /* =========================
-     IMAGE HANDLING
-  ========================= */
-  const handleFile = (file: File) => {
-    setImageFile(file);
-    setPreview(URL.createObjectURL(file));
-  };
+    setFiles(
+      product.imageUrl
+        ? [{ id: "existing", file: null, preview: product.imageUrl }]
+        : []
+    );
+  }, [open, product, reset]);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
-  };
+  const imageFile = files[0]?.file ?? null;
 
-  const clearImage = () => {
-    setImageFile(null);
-    setPreview(product.imageUrl || null);
-    if (fileRef.current) fileRef.current.value = "";
-  };
+  const isDirty =
+    product &&
+    (
+      watchedValues.name !== product.name ||
+      watchedValues.description !== product.description ||
+      watchedValues.brandName !== (product.brandName ?? "") ||
+      watchedValues.categoryId !== product.categoryId ||
+      !!imageFile ||
+      watchedValues.removeMainImage ||
+      watchedValues.removeAllImages
+    );
 
-  /* =========================
-     SUBMIT
-  ========================= */
+  /* ========================= SUBMIT ========================= */
   const onSubmit = async (data: FormValues) => {
+    if (!product) return;
+
     try {
-      await updateProduct({
+      const payload: any = {
         id: product.id,
         categoryId: data.categoryId,
-        name: data.name,
-        description: data.description,
-        brandName: data.brandName,
         removeMainImage: data.removeMainImage,
         removeAllImages: data.removeAllImages,
-        imageFiles: imageFile ? [imageFile] : undefined,
-      }).unwrap();
+      };
 
-      setIsOpen(false);
+      if (data.name !== product.name) payload.name = data.name;
+      if (data.description !== product.description) payload.description = data.description;
+      if (data.brandName !== (product.brandName ?? "")) {
+        payload.brandName = data.brandName || null;
+      }
+
+      if (imageFile) payload.imageFiles = [imageFile];
+
+      await updateProduct(payload).unwrap();
+
+      toast.success("Product updated successfully");
+      onOpenChange(false);
     } catch (err) {
-      console.error(err);
+      toast.error(parseError(err));
     }
   };
 
-  /* =========================
-     UI
-  ========================= */
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-2">
+
           {/* NAME */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
+          <div className="space-y-1">
+            <label className="text-sm font-medium">
               Product Name
             </label>
-            <Input {...register("name")} />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
-            )}
+            <Input
+              {...register("name")}
+              placeholder="Enter product name"
+            />
           </div>
 
-          {/* BRAND (RADIX DROPDOWN + PAGINATION READY) */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Brand</label>
+          {/* BRAND */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium">
+              Brand
+            </label>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-between"
-                >
-                  {selectedBrand || "Select Brand"}
+                <Button type="button" variant="outline" className="w-full justify-between">
+                  {watch("brandName") || "No Brand Selected"}
                   <ChevronDown className="w-4 h-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent
-                className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[300px]"
-              >
-                <DropdownMenuItem
-                  onSelect={() => setValue("brandName", "")}
-                >
+              <DropdownMenuContent className="w-full max-h-[300px] overflow-y-auto">
+                <DropdownMenuItem onSelect={() => setValue("brandName", "")}>
                   No Brand
                 </DropdownMenuItem>
-
-                {brandsLoading && (
-                  <div className="p-2 text-sm text-muted-foreground">
-                    Loading...
-                  </div>
-                )}
 
                 {brands.map((b: any) => (
                   <DropdownMenuItem
@@ -219,51 +192,27 @@ export const ProductFormDialog = ({
                     {b.name}
                   </DropdownMenuItem>
                 ))}
-
-                {/* LOAD MORE */}
-                {brands.length < brandsCount && (
-                  <button
-                    type="button"
-                    className="w-full text-sm p-2 hover:bg-accent"
-                    onClick={() =>
-                      setBrandQuery((p) => ({
-                        ...p,
-                        pageIndex: p.pageIndex + 1,
-                      }))
-                    }
-                  >
-                    Load more...
-                  </button>
-                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
           {/* CATEGORY */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">
+              Category <span className="text-red-500">*</span>
+            </label>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-between"
-                >
-                  {categories.find((c) => c.id === watch("categoryId"))?.name ||
-                    "Select Category"}
+                <Button type="button" variant="outline" className="w-full justify-between">
+                  {leafCategories.find(c => c.id === watch("categoryId"))?.name ??
+                    "Select category"}
                   <ChevronDown className="w-4 h-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[300px] overflow-y-auto">
-                <DropdownMenuItem
-                  onSelect={() => setValue("categoryId", "")}
-                >
-                  No Category
-                </DropdownMenuItem>
-
-                {categories.map((c) => (
+              <DropdownMenuContent className="max-h-[300px] overflow-y-auto">
+                {leafCategories.map((c) => (
                   <DropdownMenuItem
                     key={c.id}
                     onSelect={() => setValue("categoryId", c.id)}
@@ -275,95 +224,65 @@ export const ProductFormDialog = ({
             </DropdownMenu>
 
             {errors.categoryId && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className="text-sm text-red-500">
                 {errors.categoryId.message}
               </p>
             )}
           </div>
 
-          {/* CATEGORY */}
-          {/* <div>
-            <label className="block text-sm font-medium mb-1">
-              Category
-            </label>
-            <select
-              {...register("categoryId")}
-              className="w-full border rounded-md p-2"
-            >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div> */}
-
           {/* DESCRIPTION */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Description
+          <div className="space-y-1">
+            <label className="text-sm font-medium">
+              Product Description
             </label>
-            <Input {...register("description")} />
+
+            <Input
+              {...register("description")}
+              placeholder="Enter product description"
+            />
           </div>
 
           {/* IMAGE */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer"
-          >
-            {preview ? (
-              <img
-                src={preview}
-                className="max-h-40 mx-auto object-contain"
-              />
-            ) : (
-              <>
-                <ImageIcon className="mx-auto mb-2" />
-                <p>Drag & drop or click to upload</p>
-              </>
-            )}
-          </div>
-
-          <input
-            ref={fileRef}
-            type="file"
-            hidden
-            onChange={(e) =>
-              e.target.files?.[0] && handleFile(e.target.files[0])
-            }
-          />
-
-          {imageFile && (
-            <Button type="button" variant="outline" onClick={clearImage}>
-              <X className="w-4 h-4 mr-2" />
-              Remove Image
-            </Button>
-          )}
-
-          {/* FLAGS */}
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" {...register("removeMainImage")} />
-              Remove main image
+          <div className="space-y-1">
+            <label className="text-sm font-medium">
+              Product Image
             </label>
 
-            <label className="flex items-center gap-2">
-              <input type="checkbox" {...register("removeAllImages")} />
-              Remove all images
-            </label>
+            <MultiFileUploader
+              value={files}
+              onChange={(f) => setFiles(f.slice(0, 1))}
+              multiple={false}
+            />
           </div>
+
+          {/* REMOVE OPTIONS */}
+          {/* <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Image Actions
+            </label>
+
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" {...register("removeMainImage")} />
+                Remove main image
+              </label>
+
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" {...register("removeAllImages")} />
+                Remove all images
+              </label>
+            </div>
+          </div> */}
 
           {/* SUBMIT */}
           <Button
             type="submit"
-            disabled={!isValid || isLoading}
+            disabled={!isDirty || isLoading}
             className="w-full"
           >
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
+
         </form>
       </DialogContent>
     </Dialog>

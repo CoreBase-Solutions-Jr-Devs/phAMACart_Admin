@@ -3,6 +3,7 @@ import {
   LoginRequestBody,
   LoginResponseType,
   CurrentUserResponseType,
+  RefreshTokenResponseType,
 } from "./authType";
 
 export const authApi = apiClient.injectEndpoints({
@@ -12,6 +13,14 @@ export const authApi = apiClient.injectEndpoints({
         url: "/identity/sign-in",
         method: "POST",
         body: credentials,
+      }),
+    }),
+
+    refreshToken: builder.mutation<RefreshTokenResponseType, void>({
+      query: () => ({
+        url: "/identity/refresh-token",
+        method: "POST",
+        body: { refreshToken: localStorage.getItem("refreshToken") },
       }),
     }),
 

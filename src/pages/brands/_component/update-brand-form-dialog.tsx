@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,29 +12,33 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Category } from "@/features/categories/categoriesType";
-import { useUpdateCategoryMutation } from "@/features/categories/categoriesAPI";
+
+import { Brand } from "@/features/brands/brandsType";
+import { useUpdateBrandMutation } from "@/features/brands/brandsAPI";
+
+import MultiFileUploader, {
+  UploadFileItem,
+} from "@/components/upload/MultiFileUploader";
 import { parseError } from "@/lib/parse-error";
+import { toast } from "sonner";
 
 /* =========================
    SCHEMA
 ========================= */
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  description: z.string().max(100).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface Props {
-  category: Category;
+  brand: Brand;
   children: React.ReactNode;
 }
 
-export const CategoryFormDialog = ({ category, children }: Props) => {
+export const UpdateBrandFormDialog = ({ brand, children }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-
-  const [updateCategory, { isLoading }] = useUpdateCategoryMutation();
+  const [updateBrand, { isLoading }] = useUpdateBrandMutation();
 
   const {
     register,
@@ -46,30 +50,42 @@ export const CategoryFormDialog = ({ category, children }: Props) => {
     mode: "onChange",
   });
 
+  const [files, setFiles] = useState<UploadFileItem[]>([]);
+
   /* =========================
      INIT
   ========================= */
   useEffect(() => {
-    if (category && isOpen) {
-      reset({
-        name: category.name,
-        description: category.description ?? "",
-      });
+    if (brand && isOpen) {
+      reset({ name: brand.name });
+
+      setFiles(
+        brand.brandImageUrl
+          ? [
+            {
+              id: "existing-image",
+              file: null,
+              preview: brand.brandImageUrl,
+            },
+          ]
+          : []
+      );
     }
-  }, [category, isOpen, reset]);
+  }, [brand, isOpen, reset]);
 
   /* =========================
      SUBMIT
   ========================= */
   const onSubmit = async (data: FormValues) => {
     try {
-      await updateCategory({
-        id: category.id,
+      const imageFile = files[0]?.file || undefined;
+
+      await updateBrand({
+        id: brand.id,
         name: data.name,
-        description: data.description,
+        imageFile,
       }).unwrap();
 
-      toast.success("Category updated successfully.");
       setIsOpen(false);
     } catch (err) {
       toast.error(parseError(err));
@@ -85,27 +101,34 @@ export const CategoryFormDialog = ({ category, children }: Props) => {
 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
+          <DialogTitle>Edit Brand</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* NAME */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Category Name
+              Brand Name
             </label>
-            <Input placeholder="Category Name" {...register("name")} />
+            <Input placeholder="Brand Name" {...register("name")} />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.name.message}
+              </p>
             )}
           </div>
 
-          {/* DESCRIPTION */}
+          {/* IMAGE UPLOADER */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Description
+            <label className="block text-sm font-medium mb-2">
+              Brand Image
             </label>
-            <Input placeholder="Description" {...register("description")} />
+
+            <MultiFileUploader
+              value={files}
+              onChange={(f) => setFiles(f.slice(0, 1))} // enforce single file
+              multiple={false}
+            />
           </div>
 
           {/* SUBMIT */}

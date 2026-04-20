@@ -1,9 +1,19 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import {
+  createApi,
+  fetchBaseQuery,
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
 import { RootState } from "./store";
+import { setCredentials, logout } from "@/features/auth/authSlice";
+import { Mutex } from "async-mutex";
+import { AUTH_ROUTES } from "@/routes/common/routePath";
+
+const mutex = new Mutex();
 
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_BASE_URL,
-  // credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const auth = (getState() as RootState).auth;
     if (auth?.accessToken) {
@@ -13,10 +23,57 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+  await mutex.waitForUnlock();
+
+  let result = await baseQuery(args, api, extraOptions);
+
+  if (result.error?.status === 401) {
+    if (!mutex.isLocked()) {
+      const release = await mutex.acquire();
+
+      try {
+        const refreshToken = (api.getState() as RootState).auth.refreshToken;
+
+        const refreshResult = await baseQuery(
+          {
+            url: "/identity/refresh-token",
+            method: "POST",
+            body: { refreshToken },
+          },
+          api,
+          extraOptions
+        );
+
+        if (refreshResult.data) {
+          api.dispatch(
+            setCredentials(
+              refreshResult.data as { accessToken: string; refreshToken: string }
+            )
+          );
+          result = await baseQuery(args, api, extraOptions);
+        } else {
+          api.dispatch(logout());
+          if (window.location.pathname !== AUTH_ROUTES.SIGN_IN) {
+            window.location.href = AUTH_ROUTES.SIGN_IN;
+          }
+        }
+      } finally {
+        release();
+      }
+    } else {
+      await mutex.waitForUnlock();
+      result = await baseQuery(args, api, extraOptions);
+    }
+  }
+
+  return result;
+};
+
 export const apiClient = createApi({
-  reducerPath: "api", // Add API client reducer to root reducer
-  baseQuery: baseQuery,
-  refetchOnMountOrArgChange: true, // Refetch on mount or arg change
+  reducerPath: "api",
+  baseQuery: baseQueryWithReauth,
+  refetchOnMountOrArgChange: true,
   tagTypes: [
     "categories",
     "products",
@@ -25,6 +82,6 @@ export const apiClient = createApi({
     "brands",
     "banners",
     "company_profile",
-  ], // Tag types for RTK Query
-  endpoints: () => ({}), // Endpoints for RTK Query
+  ],
+  endpoints: () => ({}),
 });

@@ -1,102 +1,145 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { X, ImageIcon } from "lucide-react";
+
 import { Banner } from "@/features/banner/bannerType";
-import { useUpdateBannerMutation } from "@/features/banner/bannerAPI";
+import {
+  useGetBannerByIdQuery,
+  useUpdateBannerMutation,
+} from "@/features/banner/bannerAPI";
+
+import MultiFileUploader, {
+  UploadFileItem,
+} from "@/components/upload/MultiFileUploader";
+
+import { parseError } from "@/lib/parse-error";
+import { BannerTypeDropdown } from "./banner-type-dropdown";
 
 /* =========================
    SCHEMA
 ========================= */
 const schema = z.object({
-  title: z.string().min(1, "Name is required").max(100),
-  type: z.string().optional(),
+  Title: z.string().min(1, "Title is required").max(100),
+
+  SortOrder: z.coerce
+    .number({ invalid_type_error: "SortOrder must be a number" })
+    .min(0)
+    .max(100),
+
+  Type: z.coerce
+    .number({ invalid_type_error: "Type is required" })
+    .refine((val) => !isNaN(val), { message: "Type is required" }),
+
+  StartDate: z.string().min(1, "Start date is required"),
+  EndDate: z.string().min(1, "End date is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
+/* =========================
+   HELPERS
+========================= */
+const toDateInputValue = (date?: Date | string) => {
+  if (!date) return "";
+  const d = new Date(date);
+  return d.toISOString().split("T")[0];
+};
+
 interface Props {
   banner?: Banner;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const BannerFormDialog = ({ banner, children }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+export const BannerFormDialog = ({ banner, open, onOpenChange }: Props) => {
+  const [files, setFiles] = useState<UploadFileItem[]>([]);
 
   const [updateBanner, { isLoading }] = useUpdateBannerMutation();
+
+  /* =========================
+     FETCH FRESH DATA
+  ========================= */
+  const { data: bannerData, isFetching: isFetchingBanner } =
+    useGetBannerByIdQuery(banner?.id ?? "", {
+      skip: !open || !banner?.id,
+    });
+
+  const freshBanner = bannerData?.banner;
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { },
+    setValue,
+    watch,
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
   });
 
+  const typeValue = watch("Type");
+
   /* =========================
-     INIT
+     FILL HELPERS
   ========================= */
+  const fillForm = (source: Banner) => {
+    reset({
+      Title: source.title,
+      SortOrder: source.sortOrder,
+      Type: Number(source.type),
+      StartDate: toDateInputValue(source.startDate),
+      EndDate: toDateInputValue(source.endDate),
+    });
+
+    setFiles(
+      source.imageUrl
+        ? [{ id: "existing-banner-image", file: null, preview: source.imageUrl }]
+        : []
+    );
+  };
+
+  // Pre-fill immediately from prop when dialog opens
   useEffect(() => {
-    if (banner && isOpen) {
-      reset({
-        title: banner.Title,
-        type: banner.Type,
-      });
-      setPreview(banner.imageUrl || null);
-      setImageFile(null);
-    }
-  }, [banner, isOpen, reset]);
+    if (!open || !banner) return;
+    fillForm(banner);
+  }, [open, banner]);
 
-  /* =========================
-     IMAGE HANDLING
-  ========================= */
-  const handleFile = (file: File) => {
-    setImageFile(file);
-    setPreview(URL.createObjectURL(file));
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
-  };
-
-  const clearImage = () => {
-    setImageFile(null);
-    setPreview(banner?.imageUrl || null);
-    if (fileRef.current) fileRef.current.value = "";
-  };
+  // Overwrite with fresh API data when it arrives
+  useEffect(() => {
+    if (!freshBanner) return;
+    fillForm(freshBanner);
+  }, [freshBanner]);
 
   /* =========================
      SUBMIT
   ========================= */
   const onSubmit = async (data: FormValues) => {
     try {
+      const imageFile = files[0]?.file ?? undefined;
+
       await updateBanner({
         id: banner?.id || "",
-        title: data.title,
-        type: data?.type || "",
+        title: data.Title,
+        type: String(data.Type),
         imageFile: imageFile ? [imageFile] : null,
       }).unwrap();
 
-      setIsOpen(false);
+      toast.success("Banner updated successfully.");
+      onOpenChange(false);
     } catch (err) {
-      console.error(err);
+      toast.error(parseError(err));
     }
   };
 
@@ -104,58 +147,83 @@ export const BannerFormDialog = ({ banner, children }: Props) => {
      UI
   ========================= */
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Edit Banner</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* BRAND */}
-          <div>
-            <Input placeholder="Title" {...register("title")} />
-          </div>
-          <div>
-            <Input type="text" placeholder="Type" {...register("type")} />
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative">
+          {isFetchingBanner && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/60 backdrop-blur-sm">
+              <span className="text-sm text-muted-foreground">Refreshing...</span>
+            </div>
+          )}
 
-          {/* IMAGE */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer"
-            onClick={() => fileRef.current?.click()}
-          >
-            {preview ? (
-              <img src={preview} className="max-h-40 mx-auto object-contain" />
-            ) : (
-              <>
-                <ImageIcon className="mx-auto mb-2" />
-                <p>Drag & drop or click to upload</p>
-              </>
+          {/* TITLE */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Title</label>
+            <Input placeholder="Title" {...register("Title")} />
+            {errors.Title && (
+              <p className="text-red-500 text-sm mt-1">{errors.Title.message}</p>
             )}
           </div>
 
-          <input
-            ref={fileRef}
-            type="file"
-            hidden
-            onChange={(e) =>
-              e.target.files?.[0] && handleFile(e.target.files[0])
-            }
+          {/* SORT ORDER */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Sort Order</label>
+            <Input
+              type="number"
+              placeholder="Sort Order"
+              {...register("SortOrder")}
+            />
+            {errors.SortOrder && (
+              <p className="text-red-500 text-sm mt-1">{errors.SortOrder.message}</p>
+            )}
+          </div>
+
+          {/* TYPE */}
+          <label className="block text-sm font-medium mb-1">Baner Type</label>
+          <BannerTypeDropdown
+            value={typeValue}
+            onChange={(val) => setValue("Type", val, { shouldValidate: true })}
+            error={errors.Type?.message}
           />
 
-          {imageFile && (
-            <Button type="button" variant="outline" onClick={clearImage}>
-              <X className="w-4 h-4 mr-2" />
-              Remove Image
-            </Button>
-          )}
+          {/* START DATE */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Start Date</label>
+            <Input type="date" {...register("StartDate")} />
+            {errors.StartDate && (
+              <p className="text-red-500 text-sm mt-1">{errors.StartDate.message}</p>
+            )}
+          </div>
+
+          {/* END DATE */}
+          <div>
+            <label className="block text-sm font-medium mb-1">End Date</label>
+            <Input type="date" {...register("EndDate")} />
+            {errors.EndDate && (
+              <p className="text-red-500 text-sm mt-1">{errors.EndDate.message}</p>
+            )}
+          </div>
+
+          {/* IMAGE */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Banner Image</label>
+            <MultiFileUploader
+              value={files}
+              onChange={(f) => setFiles(f.slice(0, 1))}
+              multiple={false}
+            />
+          </div>
 
           {/* SUBMIT */}
-          <Button type="submit" disabled={isLoading} className="w-full">
+          <Button
+            type="submit"
+            disabled={isLoading || isFetchingBanner}
+            className="w-full"
+          >
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </form>

@@ -48,6 +48,38 @@ export const brandsApi = apiClient.injectEndpoints({
       invalidatesTags: ["brands"],
     }),
 
+    updateBrand: builder.mutation<
+      Brand,
+      {
+        id: string;
+        name?: string;
+        imageFile?: File;
+      }
+    >({
+      query: ({ id, name, imageFile }) => {
+        const formData = new FormData();
+
+        formData.append(
+          "brand",
+          JSON.stringify({
+            id,
+            name,
+          })
+        );
+
+        if (imageFile) {
+          formData.append("imageFile", imageFile);
+        }
+
+        return {
+          url: "/brands",
+          method: "PUT",
+          body: formData,
+        };
+      },
+      invalidatesTags: ["brands"],
+    }),
+
     // deleteProduct: builder.mutation<{ success: boolean }, string>({
     //   query: (id) => ({
     //     url: `/products/${id}`,
@@ -61,6 +93,6 @@ export const brandsApi = apiClient.injectEndpoints({
 export const {
   useGetBrandsQuery,
   useCreateBrandMutation,
-  // useUpdateProductMutation,
+  useUpdateBrandMutation,
   // useDeleteProductMutation,
 } = brandsApi;

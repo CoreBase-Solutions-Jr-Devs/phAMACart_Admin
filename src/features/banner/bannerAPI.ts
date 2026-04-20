@@ -11,6 +11,14 @@ export const BannerApi = apiClient.injectEndpoints({
       providesTags: ["banners"],
     }),
 
+    getBannerById: builder.query<{ banner: Banner }, string>({
+      query: (id) => ({
+        url: `/banners/${id}`,
+        method: "GET",
+      }),
+      providesTags: ["banners"],
+    }),
+
     createBanner: builder.mutation<
       Banner,
       {
@@ -21,7 +29,7 @@ export const BannerApi = apiClient.injectEndpoints({
         EndDate: Date;
         companyProfileId: string;
         // isTitleDisplayed: string;
-        ImageFile?: File[]; // ✅ IMPORTANT (plural)
+        ImageFile?: File[];
       }
     >({
       query: ({
@@ -84,10 +92,10 @@ export const BannerApi = apiClient.injectEndpoints({
         // });
 
         if (Array.isArray(imageFile) && imageFile.length > 0) {
-        imageFile.forEach((file) => {
-          formData.append("imageFile", file);
-        });
-}
+          imageFile.forEach((file) => {
+            formData.append("imageFile", file);
+          });
+        }
         return {
           url: "/banners",
           method: "PUT",
@@ -109,6 +117,7 @@ export const BannerApi = apiClient.injectEndpoints({
 
 export const {
   useGetBannersQuery,
+  useGetBannerByIdQuery,
   useCreateBannerMutation,
   useUpdateBannerMutation,
   // useCreateBrandMutation,

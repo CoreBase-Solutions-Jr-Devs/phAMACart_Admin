@@ -60,7 +60,7 @@ export const productsApi = apiClient.injectEndpoints({
         imageUrls?: string[];
         removeMainImage?: boolean;
         removeAllImages?: boolean;
-        imageFiles?: File[]; // ✅ IMPORTANT (plural)
+        imageFiles?: File[];
       }
       >({
       query: ({ id, imageFiles, ...rest }) => {
@@ -86,6 +86,35 @@ export const productsApi = apiClient.injectEndpoints({
           body: formData,
         };
       },
+      transformErrorResponse: (response: any) => {
+    const data = response?.data;
+
+    // ✅ Domain-specific handling
+    if (data?.title === "CategoryNotLeafException") {
+      return {
+        message: "Please select a valid sub-category (last level).",
+        code: "CATEGORY_NOT_LEAF",
+      };
+    }
+
+    // ✅ Validation errors
+    if (data?.errors) {
+      const messages = Object.values(data.errors).flat();
+      return {
+        message: messages.join(", "),
+        code: "VALIDATION_ERROR",
+      };
+    }
+
+    // ✅ Generic fallback
+    return {
+      message:
+        data?.detail ||
+        data?.title ||
+        "Something went wrong. Please try again.",
+      code: "UNKNOWN",
+    };
+  },
       invalidatesTags: ["products"],
     }),
 

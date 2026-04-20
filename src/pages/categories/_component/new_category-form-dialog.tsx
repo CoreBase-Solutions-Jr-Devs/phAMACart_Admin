@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +16,7 @@ import {
   useGetCategoriesTreeQuery,
   useCreateCategoryMutation,
 } from "@/features/categories/categoriesAPI";
+import { parseError } from "@/lib/parse-error";
 
 /* =========================
    SCHEMA
@@ -23,7 +25,6 @@ const schema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
   description: z.string().trim().min(1, "description is required").max(100),
   parentCategoryId: z.string().optional().nullable(),
-  // displayOrder: z.string().min(0, "Display order must be at least 0").max(100),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -59,7 +60,6 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
         name: data.name,
         slug: data.name.toLowerCase().split(" ").join("-"),
         description: data.description,
-        // displayOrder: Number(data.displayOrder),
       };
 
       if (data.parentCategoryId) {
@@ -68,9 +68,10 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
 
       await createCategory(payload).unwrap();
 
+      toast.success("Category created successfully.");
       setIsOpen(false);
     } catch (err) {
-      console.error(err);
+      toast.error(parseError(err));
     }
   };
 
@@ -94,10 +95,12 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
               <p className="text-sm text-red-500">{errors.name.message}</p>
             )}
           </div>
+
           {/* DESCRIPTION */}
           <div>
             <Input placeholder="Description" {...register("description")} />
           </div>
+
           {/* CATEGORY */}
           <div>
             <select
@@ -112,20 +115,6 @@ export const NewCategoryFormDialog = ({ children }: Props) => {
               ))}
             </select>
           </div>
-          {/* displayOrder */}
-          {/* <div>
-            <Input
-              type="number"
-              min={0}
-              placeholder="displayOrder"
-              {...register("displayOrder")}
-            />
-            {errors.displayOrder && (
-              <p className="text-sm text-red-500">
-                {errors.displayOrder.message}
-              </p>
-            )}
-          </div> */}
 
           {/* SUBMIT */}
           <Button

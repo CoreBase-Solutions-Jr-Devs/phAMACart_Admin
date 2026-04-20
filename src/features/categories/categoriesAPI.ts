@@ -4,12 +4,13 @@ import {
   GetCategoriesFlatResponse,
   GetCategoriesTreeResponse,
   Category,
+  GetCategoryByIdResponse,
 } from "./categoriesType";
 
 export const categoriesApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
     /**
-     * FLAT categories (your new response)
+     * FLAT categories
      */
     getCategoriesFlat: builder.query<
       GetCategoriesFlatResponse,
@@ -22,8 +23,38 @@ export const categoriesApi = apiClient.injectEndpoints({
       }),
       providesTags: ["categories"],
     }),
+
     /**
-     * Creat categories (your new response)
+     * LEAF categories — only categories with no children, assignable to products
+     */
+    getLeafCategories: builder.query<{ categories: Category[] }, void>({
+      query: () => ({
+        url: "/categories/leaf",
+        method: "GET",
+      }),
+      providesTags: ["categories"],
+    }),
+
+    /**
+     * TREE categories (hierarchical)
+     */
+    getCategoriesTree: builder.query<GetCategoriesTreeResponse, void>({
+      query: () => ({
+        url: "/categories/hierarchy",
+        method: "GET",
+      }),
+      providesTags: ["categories"],
+    }),
+
+    getCategoryById: builder.query<GetCategoryByIdResponse, string>({
+      query: (id) => ({
+        url: `/categories/${id}`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, id) => [{ type: "categories", id }],
+    }),
+    /**
+     * CREATE category
      */
     createCategory: builder.mutation<
       Category,
@@ -35,17 +66,16 @@ export const categoriesApi = apiClient.injectEndpoints({
         displayOrder?: number;
       }
     >({
-      query: (data) => {
-        return {
-          url: "/categories",
-          method: "POST",
-          body: data,
-        };
-      },
+      query: (data) => ({
+        url: "/categories",
+        method: "POST",
+        body: data,
+      }),
       invalidatesTags: ["categories"],
     }),
+
     /**
-     * Update categories (your new response)
+     * UPDATE category
      */
     updateCategory: builder.mutation<
       Category,
@@ -53,34 +83,17 @@ export const categoriesApi = apiClient.injectEndpoints({
         id: string;
         name?: string;
         description?: string;
+         parentCategoryId?: string | null;
       }
     >({
-      query: ({ id, name, description }) => {
-        return {
-          url: "/categories",
-          method: "PUT",
-          body: {
-            category: {
-              id,
-              name,
-              description,
-            },
-          },
-        };
-      },
+      query: ({ id, name, description, parentCategoryId }) => ({
+        url: "/categories",
+        method: "PUT",
+        body: { category: { id, name, description, parentCategoryId } },
+      }),
       invalidatesTags: ["categories"],
     }),
 
-    /**
-     * TREE categories (hierarchical version)
-     */
-    getCategoriesTree: builder.query<GetCategoriesTreeResponse, void>({
-      query: () => ({
-        url: "/categories/hierarchy",
-        method: "GET",
-      }),
-      providesTags: ["categories"],
-    }),
     /**
      * DELETE category
      */
@@ -96,8 +109,10 @@ export const categoriesApi = apiClient.injectEndpoints({
 
 export const {
   useGetCategoriesFlatQuery,
+  useGetCategoryByIdQuery,
+  useGetLeafCategoriesQuery,
+  useGetCategoriesTreeQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
-  useGetCategoriesTreeQuery,
   useDeleteCategoryMutation,
 } = categoriesApi;

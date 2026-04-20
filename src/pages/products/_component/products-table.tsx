@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 
 import {
@@ -7,32 +6,66 @@ import {
   useDeleteProductMutation,
 } from "@/features/products/productsAPI";
 
-import { useGetCategoriesTreeQuery } from "@/features/categories/categoriesAPI";
+import { useGetLeafCategoriesQuery } from "@/features/categories/categoriesAPI";
+import { useGetBrandsQuery } from "@/features/brands/brandsAPI";
 
 import { productsColumns } from "./columns";
 import { Input } from "@/components/ui/input";
 import { PriceSlider } from "@/components/ui/price-slider";
-import CategoryTreeCombobox from "@/components/categories/CategoryTreeCombobox";
-import { useGetBrandsQuery } from "@/features/brands/brandsAPI";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ChevronDownIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { Product } from "@/features/products/productsAPI";
+import { ProductFormDialog } from "./product-form-dialog";
+import { parseError } from "@/lib/parse-error";
+
+type FilterState = {
+  search: string;
+  pageNumber: number;
+  pageSize: number;
+  minPrice: number;
+  maxPrice: number;
+  category: string;
+  brand: string;
+};
 
 const ProductsTable = () => {
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<FilterState>({
     search: "",
     pageNumber: 1,
     pageSize: 10,
     minPrice: 0,
     maxPrice: 2000,
-    categoryId: "",
+    category: "",
     brand: "",
   });
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   /* =========================
      DATA
   ========================= */
-
   const { data, isFetching } = useGetProductsQuery({
     search: filter.search,
-    category: filter.categoryId || undefined,
+    category: filter.category || undefined,
     brand: filter.brand || undefined,
     minPrice: filter.minPrice,
     maxPrice: filter.maxPrice,
@@ -40,22 +73,22 @@ const ProductsTable = () => {
     pageSize: filter.pageSize,
   });
 
-  const { data: brandsData = {} } = useGetBrandsQuery({
+  const { data: leafCategoriesData } = useGetLeafCategoriesQuery();
+  const { data: brandsData } = useGetBrandsQuery({
     pageIndex: 0,
     pageSize: 1000,
   });
 
-  const { data: categoriesData } = useGetCategoriesTreeQuery();
-
-  const [deleteProductMutation] = useDeleteProductMutation();
+  const [deleteProductMutation, { isLoading: isDeleting }] =
+    useDeleteProductMutation();
 
   const products = data?.products.data || [];
-  const categories = categoriesData?.categories || [];
+  const leafCategories = leafCategoriesData?.categories || [];
+  const brands = brandsData?.brands?.data || [];
 
   /* =========================
      PAGINATION
   ========================= */
-
   const pagination = {
     totalCount: data?.products.count || 0,
     totalPages: Math.ceil((data?.products.count || 0) / filter.pageSize),
@@ -74,36 +107,62 @@ const ProductsTable = () => {
   /* =========================
      DELETE
   ========================= */
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id);
+  };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      await deleteProductMutation(id);
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    try {
+      await deleteProductMutation(pendingDeleteId).unwrap();
+      toast.success("Product deleted successfully.");
+      setPendingDeleteId(null);
+    } catch (err) {
+      toast.error(parseError(err));
+      setPendingDeleteId(null);
     }
   };
 
   /* =========================
-     BRANDS
+     EDIT
   ========================= */
+  const handleEdit = (product: Product) => {
+    setSelectedProduct(product);
+  };
 
-  // const brands = Array.from(
-  //   new Set(products.map((p) => p.brandName).filter((b): b is string => !!b))
-  // );
-
-  let brands = brandsData?.brands?.data || []
+  const closeEdit = () => {
+    setSelectedProduct(null);
+  };
 
   /* =========================
      COLUMNS
   ========================= */
+  const columns = useMemo(
+    () =>
+      productsColumns({
+        onDelete: handleDelete,
+        onEdit: handleEdit,
+      }),
+    [filter, products]
+  );
 
-  const columns = productsColumns({
-    onDelete: handleDelete,
-    categories,
-  });
+  /* =========================
+     FILTER LABELS
+  ========================= */
+  const selectedCategoryName = filter.category
+    ? leafCategories.find((c) => c.name === filter.category)?.name ?? filter.category
+    : null;
+
+  const selectedBrandName = filter.brand
+    ? brands.find((b: any) => b.name === filter.brand)?.name ?? filter.brand
+    : null;
 
   return (
     <div className="space-y-4">
-      {/* FILTERS */}
+
+      {/* ================= FILTERS ================= */}
       <div className="flex flex-wrap gap-4 items-center">
+
         <Input
           placeholder="Search products..."
           value={filter.search}
@@ -118,37 +177,84 @@ const ProductsTable = () => {
         />
 
         {/* CATEGORY */}
-        <CategoryTreeCombobox
-          categories={categories}
-          value={filter.categoryId}
-          onChange={(value) =>
-            setFilter((prev) => ({
-              ...prev,
-              categoryId: value,
-              pageNumber: 1,
-            }))
-          }
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="min-w-[160px] justify-between">
+              {selectedCategoryName ?? "All Categories"}
+              <ChevronDownIcon className="size-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Category</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onSelect={() =>
+                setFilter((prev) => ({ ...prev, category: "", pageNumber: 1 }))
+              }
+            >
+              All Categories
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {leafCategories.map((category) => (
+              <DropdownMenuItem
+                key={category.id}
+                onSelect={() =>
+                  setFilter((prev) => ({
+                    ...prev,
+                    category: category.name,
+                    pageNumber: 1,
+                  }))
+                }
+              >
+                {category.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* BRAND */}
-        <select
-          value={filter.brand}
-          onChange={(e) =>
-            setFilter((prev) => ({
-              ...prev,
-              brand: e.target.value,
-              pageNumber: 1,
-            }))
-          }
-          className="border rounded px-2 py-1"
-        >
-          <option value="">All Brands</option>
-          {brands.map((b:any) => (
-            <option key={b.id} value={b.name}>
-              {b.name}
-            </option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="min-w-[160px] justify-between">
+              {selectedBrandName ?? "All Brands"}
+              <ChevronDownIcon className="size-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Brand</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onSelect={() =>
+                setFilter((prev) => ({ ...prev, brand: "", pageNumber: 1 }))
+              }
+            >
+              All Brands
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {brands.map((b: any) => (
+              <DropdownMenuItem
+                key={b.id}
+                onSelect={() =>
+                  setFilter((prev) => ({
+                    ...prev,
+                    brand: b.name,
+                    pageNumber: 1,
+                  }))
+                }
+              >
+                {b.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* PRICE */}
         <div className="w-64">
@@ -166,6 +272,7 @@ const ProductsTable = () => {
               }))
             }
           />
+
           <div className="flex justify-between text-xs mt-1">
             <span>{filter.minPrice}</span>
             <span>{filter.maxPrice}</span>
@@ -173,7 +280,7 @@ const ProductsTable = () => {
         </div>
       </div>
 
-      {/* TABLE */}
+      {/* ================= TABLE ================= */}
       <DataTable
         data={products}
         columns={columns}
@@ -186,6 +293,49 @@ const ProductsTable = () => {
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
       />
+
+      {/* ================= EDIT DIALOG ================= */}
+      <ProductFormDialog
+        product={selectedProduct}
+        open={!!selectedProduct}
+        onOpenChange={(open) => {
+          if (!open) closeEdit();
+        }}
+      />
+
+      {/* ================= DELETE CONFIRM DIALOG ================= */}
+      <Dialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this product? This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingDeleteId(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
