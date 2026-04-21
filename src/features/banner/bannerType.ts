@@ -3,9 +3,12 @@ export interface Banner {
   title: string;
   sortOrder: number;
   type: string | number;
+
   startDate?: Date | string;
   endDate?: Date | string;
+
   companyProfileId?: string;
   imageUrl?: string;
+
   imageFile?: File[] | null;
 }

@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { Banner } from "@/features/banner/bannerType";
 
 const getBannerTypeLabel = (type: any) => {
@@ -30,9 +30,10 @@ const formatDate = (date?: Date | string) => {
 
 interface BannerColumnOptions {
   onEdit: (banner: Banner) => void;
+  onDelete: (id: string) => void;
 }
 
-export const bannerColumn = ({ onEdit }: BannerColumnOptions): ColumnDef<Banner>[] => [
+export const bannerColumn = ({ onEdit, onDelete }: BannerColumnOptions): ColumnDef<Banner>[] => [
   /* =========================
      IMAGE
   ========================= */
@@ -113,13 +114,23 @@ export const bannerColumn = ({ onEdit }: BannerColumnOptions): ColumnDef<Banner>
     id: "actions",
     header: "Actions",
     cell: ({ row }) => (
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => onEdit(row.original)}
-      >
-        <Edit size={16} />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onEdit(row.original)}
+        >
+          <Edit size={16} />
+        </Button>
+
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => onDelete(row.original.id!)}
+        >
+          <Trash2 size={16} />
+        </Button>
+      </div>
     ),
   },
 ];

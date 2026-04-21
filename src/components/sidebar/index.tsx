@@ -7,6 +7,8 @@ import {
   Megaphone,
   Settings2,
   Bookmark,
+  Building2,
+  Building,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +40,16 @@ const SideBar = () => {
       icon: Megaphone,
       href: PROTECTED_ROUTES.BANNER,
       label: "Banners",
+    },
+    {
+      icon: Building,
+      href: PROTECTED_ROUTES.STORES,
+      label: "Stores",
+    },
+    {
+      icon: Building2,
+      href: PROTECTED_ROUTES.COMPANYPROFILE,
+      label: "Company Profile",
     },
     {
       icon: Settings2,

@@ -77,27 +77,40 @@ export const BannerApi = apiClient.injectEndpoints({
         id: string;
         title: string;
         type: string;
+
+        sortOrder?: number;
+        startDate?: string;
+        endDate?: string;
+
         imageFile: File[] | null;
       }
     >({
-      query: ({ id, title, imageFile, type }) => {
+      query: ({ id, title, type, sortOrder, startDate, endDate, imageFile }) => {
+        console.log("API received sortOrder:", sortOrder);
         const formData = new FormData();
 
-        formData.append("id", id);
-        formData.append("title", title);
-        formData.append("type", type);
+        const append = (key: string, value?: any) => {
+          if (value !== undefined && value !== null) {
+            formData.append(key, String(value));
+          }
+        };
 
-        // Object.entries(rest).forEach(([key, value]) => {
-        //   formData.append(key, value);
-        // });
+        append("id", id);
+        append("title", title);
+        append("type", type);
+        append("sortOrder", sortOrder !== undefined && !isNaN(sortOrder) ? sortOrder : 0);
+        append("startDate", startDate);
+        append("endDate", endDate);
 
+        // IMAGE
         if (Array.isArray(imageFile) && imageFile.length > 0) {
           imageFile.forEach((file) => {
             formData.append("imageFile", file);
           });
         }
+
         return {
-          url: "/banners",
+          url: `/banners`,
           method: "PUT",
           body: formData,
         };
@@ -105,13 +118,13 @@ export const BannerApi = apiClient.injectEndpoints({
       invalidatesTags: ["banners"],
     }),
 
-    // deleteProduct: builder.mutation<{ success: boolean }, string>({
-    //   query: (id) => ({
-    //     url: `/products/${id}`,
-    //     method: "DELETE",
-    //   }),
-    //   invalidatesTags: ["products"],
-    // }),
+    deleteBanner: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/banners/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["banners"],
+    }),
   }),
 });
 
@@ -120,7 +133,5 @@ export const {
   useGetBannerByIdQuery,
   useCreateBannerMutation,
   useUpdateBannerMutation,
-  // useCreateBrandMutation,
-  // useUpdateProductMutation,
-  // useDeleteProductMutation,
+  useDeleteBannerMutation,
 } = BannerApi;

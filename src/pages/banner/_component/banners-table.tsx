@@ -1,10 +1,21 @@
 import { useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { bannerColumn } from "./columns";
-import { useGetBannersQuery } from "@/features/banner/bannerAPI";
+import { useGetBannersQuery, useDeleteBannerMutation } from "@/features/banner/bannerAPI";
 import { Banner } from "@/features/banner/bannerType";
 import { BannerFormDialog } from "./banner-form-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { parseError } from "@/lib/parse-error";
 
 const BannersTable = () => {
   const [filter, setFilter] = useState({
@@ -14,11 +25,13 @@ const BannersTable = () => {
   });
 
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   /* =========================
      DATA
   ========================= */
   const { data, isFetching } = useGetBannersQuery();
+  const [deleteBannerMutation, { isLoading: isDeleting }] = useDeleteBannerMutation();
 
   const banners = data?.banners || [];
 
@@ -48,9 +61,28 @@ const BannersTable = () => {
   };
 
   /* =========================
+     DELETE
+  ========================= */
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    try {
+      await deleteBannerMutation(pendingDeleteId).unwrap();
+      toast.success("Banner deleted successfully.");
+      setPendingDeleteId(null);
+    } catch (err) {
+      toast.error(parseError(err));
+      setPendingDeleteId(null);
+    }
+  };
+
+  /* =========================
      COLUMNS
   ========================= */
-  const columns = bannerColumn({ onEdit: handleEdit });
+  const columns = bannerColumn({ onEdit: handleEdit, onDelete: handleDelete });
 
   return (
     <div className="space-y-4">
@@ -93,6 +125,40 @@ const BannersTable = () => {
           if (!open) setSelectedBanner(null);
         }}
       />
+
+      {/* DELETE CONFIRM DIALOG */}
+      <Dialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Banner</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this banner? This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingDeleteId(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

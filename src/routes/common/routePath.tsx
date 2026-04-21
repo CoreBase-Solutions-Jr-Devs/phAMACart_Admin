@@ -9,11 +9,11 @@ export const AUTH_ROUTES = {
 
 export const PROTECTED_ROUTES = {
   OVERVIEW: "/overview",
-  APIKEYS: "/api-keys",
+  COMPANYPROFILE: "/company-profile",
   PRODUCTS: "/products",
   CATEGORIES: "/categories",
   BANNER: "/banner",
   BRANDS: "/brands",
-  DOCS: "/docs",
+  STORES: "/stores",
   SETTINGS: "/settings",
 };

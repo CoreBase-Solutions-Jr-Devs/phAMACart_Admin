@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { useCreateBannerMutation } from "@/features/banner/bannerAPI";
-import { useGetCompanyProfileQuery } from "@/features/companyProfile/companyProfile";
+import { useGetCompanyProfileQuery } from "@/features/companyProfile/companyProfileAPI";
 
 import MultiFileUploader, {
   UploadFileItem,
