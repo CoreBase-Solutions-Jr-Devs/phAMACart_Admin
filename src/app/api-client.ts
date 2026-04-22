@@ -23,7 +23,11 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   await mutex.waitForUnlock();
 
   let result = await baseQuery(args, api, extraOptions);
@@ -42,14 +46,17 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
             body: { refreshToken },
           },
           api,
-          extraOptions
+          extraOptions,
         );
 
         if (refreshResult.data) {
           api.dispatch(
             setCredentials(
-              refreshResult.data as { accessToken: string; refreshToken: string }
-            )
+              refreshResult.data as {
+                accessToken: string;
+                refreshToken: string;
+              },
+            ),
           );
           result = await baseQuery(args, api, extraOptions);
         } else {
@@ -82,6 +89,7 @@ export const apiClient = createApi({
     "brands",
     "banners",
     "company_profile",
+    "stores",
   ],
   endpoints: () => ({}),
 });
