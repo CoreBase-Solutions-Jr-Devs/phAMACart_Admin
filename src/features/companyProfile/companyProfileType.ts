@@ -31,6 +31,7 @@ export interface CompanyProfile {
   name: string;
   clientId: number;
   logoUrl?: string | null;
+  pharmacyLicenseUrl?: string | null;
   chatLink?: string | null;
   phones: PhoneEntry[];
   emails: EmailEntry[];
@@ -39,4 +40,7 @@ export interface CompanyProfile {
   users?: CompanyProfileUser[];
 }
 
-export type UpdateCompanyProfilePayload = Omit<CompanyProfile, "id" | "clientId">;
+export type UpdateCompanyProfilePayload = Omit<
+  CompanyProfile,
+  "id" | "clientId"
+>;

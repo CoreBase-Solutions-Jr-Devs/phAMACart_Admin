@@ -10,9 +10,15 @@ interface Props {
   value: UploadFileItem[];
   onChange: (files: UploadFileItem[]) => void;
   multiple?: boolean;
+  readOnly?: boolean;
 }
 
-const MultiFileUploader = ({ value, onChange, multiple = true }: Props) => {
+const MultiFileUploader = ({
+  value,
+  onChange,
+  readOnly,
+  multiple = true,
+}: Props) => {
   const [dragActive, setDragActive] = useState(false);
 
   const handleFiles = (files: FileList | File[]) => {
@@ -39,7 +45,10 @@ const MultiFileUploader = ({ value, onChange, multiple = true }: Props) => {
     <div className="space-y-4">
       {/* DROPZONE */}
       <div
-        onClick={() => document.getElementById("fileInput")?.click()}
+        onClick={() => {
+          if (readOnly) return;
+          document.getElementById("fileInput")?.click();
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragActive(true);
@@ -57,6 +66,7 @@ const MultiFileUploader = ({ value, onChange, multiple = true }: Props) => {
           accept="image/*"
           className="hidden"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
+          disabled={readOnly}
         />
 
         <p className="text-sm text-gray-600">
@@ -73,10 +83,7 @@ const MultiFileUploader = ({ value, onChange, multiple = true }: Props) => {
               key={f.id}
               className="relative border rounded-lg overflow-hidden"
             >
-              <img
-                src={f.preview}
-                className="h-32 w-full object-cover"
-              />
+              <img src={f.preview} className="h-32 w-full object-cover" />
 
               <button
                 type="button"
