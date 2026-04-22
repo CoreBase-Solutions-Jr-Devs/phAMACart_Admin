@@ -13,9 +13,8 @@ export const companyProfileApi = apiClient.injectEndpoints({
       }),
 
       // flatten API response
-      transformResponse: (response: {
-        companyProfile: CompanyProfile;
-      }) => response.companyProfile,
+      transformResponse: (response: { companyProfile: CompanyProfile }) =>
+        response.companyProfile,
 
       providesTags: ["company_profile"],
     }),
@@ -31,9 +30,10 @@ export const companyProfileApi = apiClient.injectEndpoints({
         name?: string;
         chatLink?: string;
         logoFile?: File | null;
+        pharmacyLicenseFile?: File | null;
       }
     >({
-      query: ({ id, name, chatLink, logoFile }) => {
+      query: ({ id, name, chatLink, logoFile, pharmacyLicenseFile }) => {
         const formData = new FormData();
 
         const append = (key: string, value: unknown) => {
@@ -42,12 +42,17 @@ export const companyProfileApi = apiClient.injectEndpoints({
           }
         };
 
-        append("id", id);
-        append("name", name);
-        append("chatLink", chatLink);
+        console.log(logoFile, pharmacyLicenseFile);
+
+        append("profile", JSON.stringify({ id, name }));
+        // append("name", name);
+        // append("chatLink", chatLink);
 
         if (logoFile) {
           formData.append("logoFile", logoFile);
+        }
+        if (pharmacyLicenseFile) {
+          formData.append("pharmacyLicenseFile", pharmacyLicenseFile);
         }
 
         return {
@@ -65,7 +70,5 @@ export const companyProfileApi = apiClient.injectEndpoints({
 /* =========================
    EXPORT HOOKS
 ========================= */
-export const {
-  useGetCompanyProfileQuery,
-  useUpdateCompanyProfileMutation,
-} = companyProfileApi;
+export const { useGetCompanyProfileQuery, useUpdateCompanyProfileMutation } =
+  companyProfileApi;
