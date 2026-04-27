@@ -32,26 +32,10 @@ const STATS_CONFIG = [
   },
 ] as const;
 
-// ── Mock Data ─────────────────────────────────────────────────────────────
-const mockStats = [
-  {
-    key: "orders",
-    value: 1240,
-    change: 18.4,
-  },
-  {
-    key: "sales",
-    value: "842 items",
-    change: -6.2,
-  },
-  {
-    key: "revenue",
-    value: "KES 482,300",
-    change: 12.7,
-  },
-];
+// ── No Data Yet ────────────────────────────────────────────────────────────
+const statsData: Record<string, { value: string | number; change: number }> = {};
 
-// ── Badge ────────────────────────────────────────────────────────────────
+// ── Badge ─────────────────────────────────────────────────────────────────
 function StatBadge({ value }: { value: number }) {
   const positive = value >= 0;
   const Icon = positive ? TrendingUp : TrendingDown;
@@ -70,10 +54,12 @@ function StatBadge({ value }: { value: number }) {
 
 // ── Component ─────────────────────────────────────────────────────────────
 const StatsCards = () => {
+  const isEmpty = Object.keys(statsData).length === 0;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-      {STATS_CONFIG.map((config, i) => {
-        const stat = mockStats[i];
+      {STATS_CONFIG.map((config) => {
+        const stat = statsData[config.key];
         const Icon = config.icon;
 
         return (
@@ -87,18 +73,30 @@ const StatsCards = () => {
                   >
                     <Icon size={12} className={config.iconColor} />
                   </span>
+
                   <span className="text-[9px] font-semibold tracking-wider text-muted-foreground">
                     {config.label}
                   </span>
                 </div>
 
-                {/* Value */}
-                <p className="text-lg font-bold text-foreground leading-none">
-                  {stat.value}
-                </p>
+                {/* EMPTY STATE PER CARD */}
+                {isEmpty ? (
+                  <div className="py-2">
+                    <p className="text-xs text-muted-foreground">
+                      No data yet
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Value */}
+                    <p className="text-lg font-bold text-foreground leading-none">
+                      {stat?.value ?? "—"}
+                    </p>
 
-                {/* Change */}
-                <StatBadge value={stat.change} />
+                    {/* Change */}
+                    {stat && <StatBadge value={stat.change} />}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -31,19 +31,36 @@ import { AddressesSection } from "@/pages/companyprofile/_component/addresses-se
 import { GooglePlaceSection } from "@/pages/companyprofile/_component/google-place-section";
 
 /* =========================
+   CONSTANTS
+========================= */
+const LOGO_SLOT_ID = "company-logo";
+const LICENSE_SLOT_ID = "pharmacy-license";
+
+const LOGO_ACCEPT = "image/png,image/jpeg,image/jpg";
+const LICENSE_ACCEPT = "image/png,image/jpeg,image/jpg,application/pdf";
+
+/* =========================
    HELPERS
 ========================= */
-const toDefaultValues = (
-  profile?: CompanyProfile,
-): CompanyProfileFormValues => ({
-  name: profile?.name ?? "",
-  logoUrl: profile?.logoUrl ?? "",
-  chatLink: profile?.chatLink ?? "",
-  phones: profile?.phones ?? [],
-  emails: profile?.emails ?? [],
-  addresses: profile?.addresses ?? [],
-  googlePlaceAddress: profile?.googlePlaceAddress ?? null,
+const toDefaultValues = (p?: CompanyProfile): CompanyProfileFormValues => ({
+  name: p?.name ?? "",
+  logoUrl: p?.logoUrl ?? "",
+  chatLink: p?.chatLink ?? "",
+  phones: p?.phones ?? [],
+  emails: p?.emails ?? [],
+  addresses: p?.addresses ?? [],
+  googlePlaceAddress: p?.googlePlaceAddress ?? null,
 });
+
+const logoFilesFromProfile = (p?: CompanyProfile): UploadFileItem[] =>
+  p?.logoUrl
+    ? [{ id: LOGO_SLOT_ID, file: null, preview: p.logoUrl }]
+    : [];
+
+const licenseFilesFromProfile = (p?: CompanyProfile): UploadFileItem[] =>
+  p?.pharmacyLicenseUrl
+    ? [{ id: LICENSE_SLOT_ID, file: null, preview: p.pharmacyLicenseUrl }]
+    : [];
 
 /* =========================
    COMPONENT
@@ -51,9 +68,8 @@ const toDefaultValues = (
 export const CompanyProfileForm = () => {
   const [editMode, setEditMode] = useState(false);
   const [logoFiles, setLogoFiles] = useState<UploadFileItem[]>([]);
-  const [pharmacyLicenseFiles, setPharmacyLicenseFiles] = useState<
-    UploadFileItem[]
-  >([]);
+  const [pharmacyLicenseFiles, setPharmacyLicenseFiles] =
+    useState<UploadFileItem[]>([]);
 
   const { data: profile, isFetching } = useGetCompanyProfileQuery();
   const [updateProfile, { isLoading: isSaving }] =
@@ -68,54 +84,70 @@ export const CompanyProfileForm = () => {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = methods;
 
-  /* Re-hydrate form whenever server data arrives / edit mode toggles */
+  // Single source of truth for "snap UI back to server state".
+  const hydrate = useCallback(
+    (p?: CompanyProfile) => {
+      reset(toDefaultValues(p));
+      setLogoFiles(logoFilesFromProfile(p));
+      setPharmacyLicenseFiles(licenseFilesFromProfile(p));
+    },
+    [reset],
+  );
+
   useEffect(() => {
-    reset(toDefaultValues(profile));
-    setLogoFiles(
-      profile?.logoUrl
-        ? [{ id: "logo", file: null, preview: profile.logoUrl }]
-        : [],
-    );
+    hydrate(profile);
+  }, [profile, hydrate]);
 
-    setPharmacyLicenseFiles(
-      profile?.pharmacyLicenseUrl
-        ? [{ id: "license", file: null, preview: profile.pharmacyLicenseUrl }]
-        : [],
-    );
-  }, [profile, reset]);
-
-  const cancel = () => {
-    reset(toDefaultValues(profile));
+  const cancel = useCallback(() => {
+    hydrate(profile);
     setEditMode(false);
-  };
+  }, [hydrate, profile]);
 
-  const onSubmit = async (data: CompanyProfileFormValues) => {
-    try {
-      const logoFile = logoFiles[0]?.file ?? undefined;
-      const pharmacyLicenseFile = pharmacyLicenseFiles[0]?.file ?? undefined;
-      console.log(logoFiles, pharmacyLicenseFiles);
-      await updateProfile({
-        id: profile?.id ?? "",
-        ...data,
-        logoFile: logoFile ? [logoFile] : null,
-        pharmacyLicenseFile: pharmacyLicenseFile ? [pharmacyLicenseFile] : null,
-      }).unwrap();
+  // Each handler closes over exactly one setter — no cross-contamination.
+  const handleLogoChange = useCallback(
+    (files: UploadFileItem[]) => setLogoFiles(files),
+    [],
+  );
 
-      toast.success("Company profile updated.");
-      setEditMode(false);
-    } catch (err) {
-      toast.error(parseError(err));
-    }
-  };
+  const handleLicenseChange = useCallback(
+    (files: UploadFileItem[]) => setPharmacyLicenseFiles(files),
+    [],
+  );
+
+  const onSubmit = useCallback(
+    async (data: CompanyProfileFormValues) => {
+      if (!profile?.id) {
+        toast.error("Profile not loaded yet.");
+        return;
+      }
+
+      // Server-hydrated preview items have file === null; skip re-sending them.
+      const logoFile = logoFiles[0]?.file ?? null;
+      const pharmacyLicenseFile = pharmacyLicenseFiles[0]?.file ?? null;
+
+      try {
+        await updateProfile({
+          id: profile.id,
+          name: data.name,
+          chatLink: data.chatLink ?? undefined,
+          logoFile,
+          pharmacyLicenseFile,
+        }).unwrap();
+
+        toast.success("Company profile updated.");
+        setEditMode(false);
+      } catch (err) {
+        toast.error(parseError(err));
+      }
+    },
+    [profile?.id, logoFiles, pharmacyLicenseFiles, updateProfile],
+  );
 
   const readOnly = !editMode;
 
-  /* =========================
-     UI
-  ========================= */
   if (isFetching && !profile) {
     return (
       <div className="py-16 flex items-center justify-center text-muted-foreground">
@@ -130,7 +162,7 @@ export const CompanyProfileForm = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-8 pb-24 relative"
       >
-        {/* ===== Header / action bar ===== */}
+        {/* ===== Header ===== */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">
@@ -193,29 +225,30 @@ export const CompanyProfileForm = () => {
             </div>
           </div>
 
-          <div>
-            <Label className="text-xs">Logo</Label>
-            <MultiFileUploader
-              value={logoFiles}
-              onChange={(f) => setLogoFiles([f[1]])}
-              //   onChange={(f) => console.log(f)}
-              readOnly={readOnly}
-              // If your uploader supports a disabled prop, pass `disabled={readOnly}`.
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs">Logo</Label>
+              <MultiFileUploader
+                key={LOGO_SLOT_ID}
+                value={logoFiles}
+                onChange={handleLogoChange}
+                readOnly={readOnly}
+                multiple={false}
+                accept={LOGO_ACCEPT}
+              />
+            </div>
 
-          <div>
-            <Label className="text-xs">License File</Label>
-            <MultiFileUploader
-              value={pharmacyLicenseFiles}
-              onChange={(f) => {
-                console.log([f[1]]);
-                setPharmacyLicenseFiles([f[1]]);
-              }}
-              //   onChange={(f) => console.log(f.slice(0, 1))}
-              readOnly={readOnly}
-              // If your uploader supports a disabled prop, pass `disabled={readOnly}`.
-            />
+            <div>
+              <Label className="text-xs">Pharmacy license</Label>
+              <MultiFileUploader
+                key={LICENSE_SLOT_ID}
+                value={pharmacyLicenseFiles}
+                onChange={handleLicenseChange}
+                readOnly={readOnly}
+                multiple={false}
+                accept={LICENSE_ACCEPT}
+              />
+            </div>
           </div>
         </section>
 
@@ -229,9 +262,7 @@ export const CompanyProfileForm = () => {
         <AddressesSection readOnly={readOnly} />
         <GooglePlaceSection readOnly={readOnly} />
 
-        {/* ===== Users (read-only summary) =====
-            Linking/unlinking users is typically a separate flow, so we just show
-            a summary here. Wire this up to a UsersManager component if needed. */}
+        {/* ===== Linked users ===== */}
         {profile?.users && profile.users.length > 0 && (
           <section className="space-y-2">
             <h3 className="text-sm font-semibold">Linked users</h3>

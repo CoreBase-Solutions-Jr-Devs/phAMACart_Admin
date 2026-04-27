@@ -31,8 +31,8 @@ const Overview = () => {
 
       {/* Main Content */}
       <div className="flex flex-col gap-6">
-        <OverviewChart />
         <RecentOrders />
+        <OverviewChart />
       </div>
     </div>
   );

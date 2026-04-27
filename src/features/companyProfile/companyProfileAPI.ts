@@ -46,7 +46,7 @@ export const companyProfileApi = apiClient.injectEndpoints({
 
         append("profile", JSON.stringify({ id, name }));
         // append("name", name);
-        // append("chatLink", chatLink);
+        append("chatLink", chatLink);
 
         if (logoFile) {
           formData.append("logoFile", logoFile);
