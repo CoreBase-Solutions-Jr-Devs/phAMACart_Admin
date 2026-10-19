@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
-import { Product } from "@/features/products/productsAPI";
+import { Product } from "@/features/products/productsType";
 
 interface Props {
   onDelete: (id: string) => void;

@@ -1,5 +1,7 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
+import notificationsReducer from '../features/notifications/notificationSlice';
+import tenantReducer from '../features/tenants/tenantsSlice';
 import storage from 'redux-persist/lib/storage'
 import {
   persistReducer,
@@ -32,7 +34,9 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
     [apiClient.reducerPath]: apiClient.reducer, // Add API client reducer to root reducer
-    auth:authReducer, // Add auth reducer to root reducer
+    auth:authReducer, 
+    notifications: notificationsReducer, 
+    tenant: tenantReducer
   })
 
   // Create a persisted version of the root reducer

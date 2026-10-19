@@ -1,91 +1,156 @@
-import { PROTECTED_ROUTES } from "@/routes/common/routePath";
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
-  ShoppingBag,
-  Layers,
-  Megaphone,
-  Settings2,
-  Bookmark,
-  Building2,
-  Building,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
+import {
+  getVisibleNavSections,
+} from "@/routes/nav-routes";
+import { Button } from "@/components/ui/button";
+import useAuth from "@/hooks/use-auth";
+
+const SIDEBAR_COLLAPSED_KEY = "sidebar:collapsed";
+
+const getInitialCollapsed = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.localStorage.getItem(
+      SIDEBAR_COLLAPSED_KEY,
+    ) === "1"
+  );
+};
 
 const SideBar = () => {
   const { pathname } = useLocation();
 
-  const routes = [
-    {
-      icon: LayoutDashboard,
-      href: PROTECTED_ROUTES.OVERVIEW,
-      label: "Overview",
-    },
-    {
-      icon: ShoppingBag,
-      href: PROTECTED_ROUTES.PRODUCTS,
-      label: "Products",
-    },
-    {
-      icon: Bookmark,
-      href: PROTECTED_ROUTES.BRANDS,
-      label: "Brands",
-    },
-    {
-      icon: Layers,
-      href: PROTECTED_ROUTES.CATEGORIES,
-      label: "Categories",
-    },
-    {
-      icon: Megaphone,
-      href: PROTECTED_ROUTES.BANNER,
-      label: "Banners",
-    },
-    {
-      icon: Building,
-      href: PROTECTED_ROUTES.STORES,
-      label: "Stores",
-    },
-    {
-      icon: Building2,
-      href: PROTECTED_ROUTES.COMPANYPROFILE,
-      label: "Company Profile",
-    },
-    {
-      icon: Settings2,
-      href: PROTECTED_ROUTES.SETTINGS,
-      label: "Settings",
-    },
-  ];
+  const [collapsed, setCollapsed] = useState(
+    getInitialCollapsed,
+  );
+
+  const { data } = useAuth();
+
+  const userRoles = data?.user?.roles ?? [];
+
+  const navSections = getVisibleNavSections(userRoles);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+
+      window.localStorage.setItem(
+        SIDEBAR_COLLAPSED_KEY,
+        next ? "1" : "0",
+      );
+
+      return next;
+    });
+  };
 
   return (
-    <div className="hidden lg:flex w-screen sticky shrink-0 top-20 flex-col sm:w-[215px] h-full">
-      <nav>
-        <ul
-          className="flex flex-row justify-between gap-x-4 gap-y-2 p-4
-        text-center sm:flex-col sm:p-6 sm:text-left"
-        >
-          {routes.map((route, i) => {
-            const Icon = route.icon;
-            return (
-              <li key={i}>
-                <NavLink
-                  className={cn(
-                    "rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-secondary hover:!text-secondary-foreground flex h-max flex-col items-center justify-center gap-2 px-2 py-1.5 font-medium sm:h-10 sm:flex-row sm:justify-start sm:px-4 sm:text-sm bg-transparent text-foreground",
-                    pathname === route.href && "bg-secondary",
-                  )}
-                  to={route.href}
-                >
-                  <Icon className="size-5" />
-                  <span className="sr-only line-clamp-2 sm:not-sr-only">
-                    {route.label}
-                  </span>
-                </NavLink>
-              </li>
-            );
-          })}
+    <div
+      className={cn(
+        "hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:flex",
+        collapsed ? "w-[68px]" : "w-[215px]",
+      )}
+    >
+      <nav
+        className="flex-1 overflow-y-auto overflow-x-hidden"
+        style={{ scrollbarWidth: "none" }}
+      >
+        <ul className="flex flex-col gap-y-4 p-3">
+          {navSections.map((section) => (
+            <li key={section.label}>
+              {!collapsed && (
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+                  {section.label}
+                </p>
+              )}
+
+              <ul className="flex flex-col gap-y-1">
+                {section.routes.map((route) => {
+                  const Icon = route.icon;
+
+                  const isActive =
+                    pathname === route.href ||
+                    pathname.startsWith(
+                      `${route.href}/`,
+                    );
+
+                  return (
+                    <li key={route.href}>
+                      <NavLink
+                        to={route.href}
+                        className={cn(
+                          "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-sidebar-foreground/80 transition-colors",
+                          "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring",
+                          isActive &&
+                            "bg-sidebar-accent text-sidebar-accent-foreground",
+                          collapsed &&
+                            "justify-center px-0",
+                        )}
+                        title={
+                          collapsed
+                            ? route.label
+                            : undefined
+                        }
+                      >
+                        <Icon className="size-5 shrink-0" />
+
+                        {!collapsed && (
+                          <span className="truncate">
+                            {route.label}
+                          </span>
+                        )}
+                      </NavLink>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
         </ul>
       </nav>
+
+      <div className="border-t border-sidebar-border p-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleCollapsed}
+          className={cn(
+            "w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            !collapsed &&
+              "justify-start gap-2 px-3",
+          )}
+          aria-label={
+            collapsed
+              ? "Expand sidebar"
+              : "Collapse sidebar"
+          }
+          title={
+            collapsed
+              ? "Expand sidebar"
+              : "Collapse sidebar"
+          }
+        >
+          {collapsed ? (
+            <ChevronsRight className="size-4" />
+          ) : (
+            <>
+              <ChevronsLeft className="size-4" />
+              <span className="text-sm">
+                Collapse
+              </span>
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

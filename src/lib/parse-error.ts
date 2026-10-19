@@ -21,17 +21,17 @@ const HTTP_STATUS_MESSAGES: Record<number, string> = {
 };
 
 export const parseError = (err: any): string => {
-  // Simple JS error
+  // 1. Standard JavaScript error instance (e.g. throw new Error("..."))
   if (err?.message && typeof err.message === "string" && !err.data) {
     return err.message;
   }
 
-  // Plain string body (e.g. "Brand image file is required")
+  // 2. Plain string error body
   if (typeof err?.data === "string" && err.data.length > 0) {
     return err.data;
   }
 
-  const data = err?.data;
+  const data = err?.data ?? err;
   const status = err?.status;
 
   if (!data) {
@@ -44,7 +44,12 @@ export const parseError = (err: any): string => {
     return `Request failed (${status ?? "unknown"}).`;
   }
 
-  // FluentValidation (ASP.NET)
+  // 3. Result Pattern / Domain Failure payload: { isFailure: true, error: { message: "..." } }
+  if (data?.error?.message && typeof data.error.message === "string") {
+    return data.error.message;
+  }
+
+  // 4. Custom FluentValidation Array: { ValidationErrors: [{ errorMessage: "..." }] }
   if (
     Array.isArray(data.ValidationErrors) &&
     data.ValidationErrors.length > 0
@@ -54,31 +59,31 @@ export const parseError = (err: any): string => {
       .join(", ");
   }
 
-  // ASP.NET ModelState
+  // 5. ASP.NET ModelState / FluentValidation Dictionary: { errors: { FieldName: ["Error 1"] } }
   if (data.errors && typeof data.errors === "object") {
-    const messages = (Object.values(data.errors) as string[][])
+    const messages = (Object.values(data.errors) as (string | string[])[])
       .flat()
+      .map(String)
       .filter(Boolean);
 
     if (messages.length > 0) return messages.join(", ");
   }
 
-  // ProblemDetails — prefer detail, fall back to title
+  // 6. ProblemDetails fields (detail, message, title)
   const detail = data.detail ?? data.Detail;
-  const title = data.title ?? data.Title;
   const message = data.message ?? data.Message;
+  const title = data.title ?? data.Title;
 
-  const bodyMessage = detail ?? message ?? title;
+  const bodyMessage =
+    detail ??
+    message ??
+    (title !== "One or more validation errors occurred." ? title : null);
 
-  if (bodyMessage) {
-    // Prepend status code for 4xx/5xx so the user sees context
-    if (typeof status === "number" && HTTP_STATUS_MESSAGES[status]) {
-      return `(${status}) ${bodyMessage}`;
-    }
+  if (bodyMessage && typeof bodyMessage === "string") {
     return bodyMessage;
   }
 
-  // Final fallback with friendly label if status is known
+  // 7. Fallback to HTTP Status Code description
   if (typeof status === "number" && HTTP_STATUS_MESSAGES[status]) {
     return `(${status}) ${HTTP_STATUS_MESSAGES[status]}`;
   }

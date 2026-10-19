@@ -62,7 +62,7 @@ export const categoriesApi = apiClient.injectEndpoints({
         name?: string;
         slug?: string;
         description?: string;
-        parentCategoryId?: string;
+        parentCategoryId?: string | null;
         displayOrder?: number;
       }
     >({

@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table";
 
 import {
   useGetProductsQuery,
   useDeleteProductMutation,
+  useTriggerProductSyncMutation,
 } from "@/features/products/productsAPI";
 
 import { useGetLeafCategoriesQuery } from "@/features/categories/categoriesAPI";
@@ -32,7 +33,7 @@ import {
 import { ChevronDownIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { Product } from "@/features/products/productsAPI";
+import { Product } from "@/features/products/productsType";
 import { ProductFormDialog } from "./product-form-dialog";
 import { parseError } from "@/lib/parse-error";
 
@@ -52,7 +53,7 @@ const ProductsTable = () => {
     pageNumber: 1,
     pageSize: 10,
     minPrice: 0,
-    maxPrice: 2000,
+    maxPrice: 10000,
     category: "",
     brand: "",
   });
@@ -60,9 +61,10 @@ const ProductsTable = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  /* =========================
-     DATA
-  ========================= */
+  // ─────────────────────────────────────────────────────────────────────
+  // DATA
+  // ─────────────────────────────────────────────────────────────────────
+
   const { data, isFetching } = useGetProductsQuery({
     search: filter.search,
     category: filter.category || undefined,
@@ -74,6 +76,7 @@ const ProductsTable = () => {
   });
 
   const { data: leafCategoriesData } = useGetLeafCategoriesQuery();
+
   const { data: brandsData } = useGetBrandsQuery({
     pageIndex: 0,
     pageSize: 1000,
@@ -82,50 +85,83 @@ const ProductsTable = () => {
   const [deleteProductMutation, { isLoading: isDeleting }] =
     useDeleteProductMutation();
 
+  const [triggerSync, { isLoading: isSyncing }] =
+    useTriggerProductSyncMutation();
+
   const products = data?.products.data || [];
   const leafCategories = leafCategoriesData?.categories || [];
   const brands = brandsData?.brands?.data || [];
 
-  /* =========================
-     PAGINATION
-  ========================= */
+  // ─────────────────────────────────────────────────────────────────────
+  // SYNC
+  // ─────────────────────────────────────────────────────────────────────
+
+  const handleSyncProducts = async () => {
+    try {
+      const res = await triggerSync().unwrap();
+
+      toast.success(res.message || "Product sync started");
+    } catch (err) {
+      toast.error(parseError(err));
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────
+  // PAGINATION
+  // ─────────────────────────────────────────────────────────────────────
+
   const pagination = {
     totalCount: data?.products.count || 0,
-    totalPages: Math.ceil((data?.products.count || 0) / filter.pageSize),
+    totalPages: Math.ceil(
+      (data?.products.count || 0) / filter.pageSize
+    ),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,
   };
 
   const handlePageChange = (pageNumber: number) => {
-    setFilter((prev) => ({ ...prev, pageNumber }));
+    setFilter((prev) => ({
+      ...prev,
+      pageNumber,
+    }));
   };
 
   const handlePageSizeChange = (pageSize: number) => {
-    setFilter((prev) => ({ ...prev, pageSize, pageNumber: 1 }));
+    setFilter((prev) => ({
+      ...prev,
+      pageSize,
+      pageNumber: 1,
+    }));
   };
 
-  /* =========================
-     DELETE
-  ========================= */
+  // ─────────────────────────────────────────────────────────────────────
+  // DELETE
+  // ─────────────────────────────────────────────────────────────────────
+
   const handleDelete = (id: string) => {
     setPendingDeleteId(id);
   };
 
   const handleConfirmDelete = async () => {
     if (!pendingDeleteId) return;
+
     try {
       await deleteProductMutation(pendingDeleteId).unwrap();
+
       toast.success("Product deleted successfully.");
+
       setPendingDeleteId(null);
     } catch (err) {
       toast.error(parseError(err));
+
       setPendingDeleteId(null);
     }
   };
 
-  /* =========================
-     EDIT
-  ========================= */
+  // ─────────────────────────────────────────────────────────────────────
+  // EDIT
+  // ─────────────────────────────────────────────────────────────────────
+
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
   };
@@ -134,35 +170,65 @@ const ProductsTable = () => {
     setSelectedProduct(null);
   };
 
-  /* =========================
-     COLUMNS
-  ========================= */
+  // ─────────────────────────────────────────────────────────────────────
+  // COLUMNS
+  // ─────────────────────────────────────────────────────────────────────
+
   const columns = useMemo(
     () =>
       productsColumns({
         onDelete: handleDelete,
         onEdit: handleEdit,
       }),
-    [filter, products]
+    [products]
   );
 
-  /* =========================
-     FILTER LABELS
-  ========================= */
+  // ─────────────────────────────────────────────────────────────────────
+  // FILTER LABELS
+  // ─────────────────────────────────────────────────────────────────────
+
   const selectedCategoryName = filter.category
-    ? leafCategories.find((c) => c.name === filter.category)?.name ?? filter.category
+    ? leafCategories.find(
+      (category) => category.name === filter.category
+    )?.name ?? filter.category
     : null;
 
   const selectedBrandName = filter.brand
-    ? brands.find((b: any) => b.name === filter.brand)?.name ?? filter.brand
+    ? brands.find(
+      (brand: any) => brand.name === filter.brand
+    )?.name ?? filter.brand
     : null;
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
+      {/* ─────────────────────────────────────────────────────────────── */}
+      {/* ACTIONS */}
+      {/* ─────────────────────────────────────────────────────────────── */}
 
-      {/* ================= FILTERS ================= */}
-      <div className="flex flex-wrap gap-4 items-center">
+      <div className="flex w-full items-center justify-between">
+        <Button
+          onClick={handleSyncProducts}
+          disabled={isSyncing}
+          className="shrink-0"
+        >
+          {isSyncing ? "Syncing..." : "Sync Products Now"}
+        </Button>
+      </div>
 
+      {/* ─────────────────────────────────────────────────────────────── */}
+      {/* FILTERS */}
+      {/* ─────────────────────────────────────────────────────────────── */}
+
+      <div
+        className="
+          grid w-full items-center gap-3
+          grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-[minmax(220px,1.5fr)_minmax(150px,1fr)_minmax(150px,1fr)]
+          xl:grid-cols-[minmax(280px,1.5fr)_160px_160px_260px]
+        "
+      >
+        {/* SEARCH */}
         <Input
           placeholder="Search products..."
           value={filter.search}
@@ -173,25 +239,38 @@ const ProductsTable = () => {
               pageNumber: 1,
             }))
           }
-          className="max-w-sm"
+          className="w-full"
         />
 
         {/* CATEGORY */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[160px] justify-between">
-              {selectedCategoryName ?? "All Categories"}
-              <ChevronDownIcon className="size-4 opacity-50" />
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+            >
+              <span className="truncate">
+                {selectedCategoryName ?? "All Categories"}
+              </span>
+
+              <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Category</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              Category
+            </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
               onSelect={() =>
-                setFilter((prev) => ({ ...prev, category: "", pageNumber: 1 }))
+                setFilter((prev) => ({
+                  ...prev,
+                  category: "",
+                  pageNumber: 1,
+                }))
               }
             >
               All Categories
@@ -219,19 +298,32 @@ const ProductsTable = () => {
         {/* BRAND */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[160px] justify-between">
-              {selectedBrandName ?? "All Brands"}
-              <ChevronDownIcon className="size-4 opacity-50" />
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+            >
+              <span className="truncate">
+                {selectedBrandName ?? "All Brands"}
+              </span>
+
+              <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Brand</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              Brand
+            </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
               onSelect={() =>
-                setFilter((prev) => ({ ...prev, brand: "", pageNumber: 1 }))
+                setFilter((prev) => ({
+                  ...prev,
+                  brand: "",
+                  pageNumber: 1,
+                }))
               }
             >
               All Brands
@@ -239,28 +331,32 @@ const ProductsTable = () => {
 
             <DropdownMenuSeparator />
 
-            {brands.map((b: any) => (
+            {brands.map((brand: any) => (
               <DropdownMenuItem
-                key={b.id}
+                key={brand.id}
                 onSelect={() =>
                   setFilter((prev) => ({
                     ...prev,
-                    brand: b.name,
+                    brand: brand.name,
                     pageNumber: 1,
                   }))
                 }
               >
-                {b.name}
+                {brand.name}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
         {/* PRICE */}
-        <div className="w-64">
+        <div className="w-full min-w-0">
+          <div className="mb-1 text-xs font-medium text-muted-foreground">
+            Price Range
+          </div>
+
           <PriceSlider
             min={0}
-            max={2000}
+            max={10000}
             step={10}
             value={[filter.minPrice, filter.maxPrice]}
             onChange={([min, max]) =>
@@ -273,51 +369,77 @@ const ProductsTable = () => {
             }
           />
 
-          <div className="flex justify-between text-xs mt-1">
-            <span>{filter.minPrice}</span>
-            <span>{filter.maxPrice}</span>
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+            <span>
+              KES {filter.minPrice.toLocaleString()}
+            </span>
+
+            <span>
+              KES {filter.maxPrice.toLocaleString()}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ================= TABLE ================= */}
-      <DataTable
-        data={products}
-        columns={columns}
-        isLoading={isFetching}
-        selection={false}
-        showSearch={false}
-        emptyTitle="No products found"
-        isShowPagination={true}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
+      {/* ─────────────────────────────────────────────────────────────── */}
+      {/* TABLE */}
+      {/* ─────────────────────────────────────────────────────────────── */}
 
-      {/* ================= EDIT DIALOG ================= */}
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[900px]">
+          <DataTable
+            data={products}
+            columns={columns}
+            isLoading={isFetching}
+            selection={false}
+            showSearch={false}
+            emptyTitle="No products found"
+            isShowPagination={true}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────── */}
+      {/* EDIT DIALOG */}
+      {/* ─────────────────────────────────────────────────────────────── */}
+
       <ProductFormDialog
         product={selectedProduct}
         open={!!selectedProduct}
         onOpenChange={(open) => {
-          if (!open) closeEdit();
+          if (!open) {
+            closeEdit();
+          }
         }}
       />
 
-      {/* ================= DELETE CONFIRM DIALOG ================= */}
+      {/* ─────────────────────────────────────────────────────────────── */}
+      {/* DELETE CONFIRMATION */}
+      {/* ─────────────────────────────────────────────────────────────── */}
+
       <Dialog
         open={!!pendingDeleteId}
         onOpenChange={(open) => {
-          if (!open) setPendingDeleteId(null);
+          if (!open) {
+            setPendingDeleteId(null);
+          }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
+            <DialogTitle>
+              Delete Product
+            </DialogTitle>
+
             <DialogDescription>
-              Are you sure you want to delete this product? This action cannot
-              be undone.
+              Are you sure you want to delete this product?
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -326,6 +448,7 @@ const ProductsTable = () => {
             >
               Cancel
             </Button>
+
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}

@@ -1,43 +1,81 @@
 import { apiClient } from "@/app/api-client";
 import { Brand } from "./brandsType";
 
+/* =========================
+   TYPES
+========================= */
+
+export interface GetBrandsParams {
+  search?: string;
+  pageIndex?: number;
+  pageSize?: number;
+  sortBy?: string;
+  descending?: boolean;
+}
+
+export interface GetBrandsResponse {
+  brands: {
+    pageIndex: number;
+    pageSize: number;
+    count: number;
+    data: Brand[];
+  };
+}
+
+export interface CreateBrandPayload {
+  name: string;
+  description: string;
+  brandImageFile: File;
+}
+
+export interface CreateBrandResult {
+  id: string;
+}
+
+export interface UpdateBrandPayload {
+  id: string;
+  name: string;
+  description?: string | null;  
+  brandImageUrl?: string | null;
+  brandImageFile?: File | null;
+}
+
+export interface UpdateBrandResult {
+  brand: Brand;
+}
+
+/* =========================
+   API
+========================= */
+
 export const brandsApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
-    getBrands: builder.query({
+    /* =========================
+       GET
+    ========================= */
+    getBrands: builder.query<GetBrandsResponse, GetBrandsParams>({
       query: (params) => ({
         url: "/brands",
         method: "GET",
         params,
       }),
+
       providesTags: ["brands"],
     }),
 
+    /* =========================
+       CREATE
+    ========================= */
     createBrand: builder.mutation<
-      Brand,
-      {
-        id?: string;
-        name: string;
-        brandImageFile?: File[]; // ✅ IMPORTANT (plural)
-      }
+      CreateBrandResult,
+      CreateBrandPayload
     >({
-      query: ({ id, name, brandImageFile }) => {
+      query: ({ name, description, brandImageFile }) => {
         const formData = new FormData();
 
-
-        if (id) {
-          formData.append("id", id);
-        }
         formData.append("name", name);
-
-        // Object.entries(rest).forEach(([key, value]) => {
-        //   formData.append(key, value);
-        // });
-
-        if (brandImageFile && brandImageFile.length > 0) {
-          brandImageFile.forEach((file) => {
-            formData.append("brandImageFile", file);
-          });
-        }
+        formData.append("description", description);
+        formData.append("brandImageFile", brandImageFile);
 
         return {
           url: "/brands",
@@ -45,30 +83,40 @@ export const brandsApi = apiClient.injectEndpoints({
           body: formData,
         };
       },
+
+      transformErrorResponse: brandErrorMapper,
+
       invalidatesTags: ["brands"],
     }),
 
+    /* =========================
+       UPDATE
+    ========================= */
     updateBrand: builder.mutation<
-      Brand,
-      {
-        id: string;
-        name?: string;
-        imageFile?: File;
-      }
+      UpdateBrandResult,
+      UpdateBrandPayload
     >({
-      query: ({ id, name, imageFile }) => {
+      query: ({
+        id,
+        name,
+        description,
+        brandImageUrl,
+        brandImageFile,
+      }) => {
         const formData = new FormData();
 
         formData.append(
-          "brand",
+          "Brand",
           JSON.stringify({
-            id,
-            name,
-          })
+            Id: id,
+            Name: name,
+            Description: description ?? null,
+            BrandImageUrl: brandImageUrl ?? null,
+          }),
         );
 
-        if (imageFile) {
-          formData.append("imageFile", imageFile);
+        if (brandImageFile) {
+          formData.append("BrandImageFile", brandImageFile);
         }
 
         return {
@@ -77,22 +125,83 @@ export const brandsApi = apiClient.injectEndpoints({
           body: formData,
         };
       },
+
+      transformErrorResponse: brandErrorMapper,
+
       invalidatesTags: ["brands"],
     }),
 
-    // deleteProduct: builder.mutation<{ success: boolean }, string>({
-    //   query: (id) => ({
-    //     url: `/products/${id}`,
-    //     method: "DELETE",
-    //   }),
-    //   invalidatesTags: ["products"],
-    // }),
+    /* =========================
+       DELETE
+    ========================= */
+    deleteBrand: builder.mutation<
+      { success: boolean },
+      string
+    >({
+      query: (id) => ({
+        url: `/brands/${id}`,
+        method: "DELETE",
+      }),
+
+      invalidatesTags: ["brands"],
+    }),
   }),
 });
+
+/* =========================
+   ERROR MAPPER
+========================= */
+
+function brandErrorMapper(response: any) {
+  const data = response?.data;
+
+  if (data?.title === "BrandNameExistsException") {
+    return {
+      message: "A brand with this name already exists.",
+      code: "BRAND_NAME_EXISTS",
+    };
+  }
+
+  if (data?.title === "BrandSlugExistsException") {
+    return {
+      message: "A similar brand already exists.",
+      code: "BRAND_SLUG_EXISTS",
+    };
+  }
+
+  if (data?.title === "BrandNotFoundException") {
+    return {
+      message: "Brand not found.",
+      code: "BRAND_NOT_FOUND",
+    };
+  }
+
+  if (data?.errors) {
+    const messages = Object.values(data.errors).flat();
+
+    return {
+      message: messages.join(", "),
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  return {
+    message:
+      data?.detail ||
+      data?.title ||
+      "Something went wrong.",
+
+    code: "UNKNOWN",
+  };
+}
+
+/* =========================
+   HOOKS
+========================= */
 
 export const {
   useGetBrandsQuery,
   useCreateBrandMutation,
   useUpdateBrandMutation,
-  // useDeleteProductMutation,
+  useDeleteBrandMutation,
 } = brandsApi;

@@ -1,113 +1,268 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  PayloadAction,
+} from "@reduxjs/toolkit";
+
 import { jwtDecode } from "jwt-decode";
-import { AuthState, DecodedToken } from "./authType";
 
-const getInitialState = (): AuthState => {
-  const accessToken = localStorage.getItem("accessToken");
-  const refreshToken = localStorage.getItem("refreshToken");
+import { authApi } from "./authAPI";
 
-  if (accessToken) {
-    try {
-      const decoded: DecodedToken = jwtDecode(accessToken);
+import {
+  AuthState,
+  DecodedToken,
+} from "./authType";
 
-      // Check if token is expired
-      const isExpired = decoded.exp ? decoded.exp * 1000 < Date.now() : false;
-
-      if (isExpired) {
-        // Access token expired but keep refreshToken so baseQueryWithReauth can use it
-        return {
-          accessToken: null,
-          refreshToken, // ← retain so reauth can attempt refresh on first load
-          user: decoded,
-          isAuthenticated: false,
-        };
-      }
-
-      return {
-        accessToken,
-        refreshToken,
-        user: decoded,
-        isAuthenticated: true,
-      };
-    } catch {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      return {
-        accessToken: null,
-        refreshToken: null,
-        user: null,
-        isAuthenticated: false,
-      };
-    }
+const normalizeRoles = (
+  role:
+    | string
+    | string[]
+    | undefined,
+): string[] => {
+  if (!role) {
+    return [];
   }
 
+  const roles = Array.isArray(role)
+    ? role
+    : [role];
+
+  return roles
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const decodeToken = (
+  accessToken: string,
+): DecodedToken => {
+  const decoded =
+    jwtDecode<
+      Omit<DecodedToken, "roles">
+    >(accessToken);
+
   return {
-    accessToken: null,
-    refreshToken,  // ← retain refresh token even if access token is absent
-    user: null,
-    isAuthenticated: false,
+    ...decoded,
+    roles: normalizeRoles(decoded.role),
   };
 };
 
-const initialState: AuthState = getInitialState();
+const getInitialState = (): AuthState => {
+  const accessToken =
+    localStorage.getItem("accessToken");
+
+  const refreshToken =
+    localStorage.getItem("refreshToken");
+
+  /**
+   * No access token.
+   *
+   * If there is a refresh token, we still need
+   * to initialize authentication before deciding
+   * that the user is logged out.
+   */
+  if (!accessToken) {
+    return {
+      accessToken: null,
+      refreshToken,
+      user: null,
+      isAuthenticated: false,
+      isInitialized: !refreshToken,
+    };
+  }
+
+  try {
+    const decoded =
+      decodeToken(accessToken);
+
+    const isExpired =
+      decoded.exp
+        ? decoded.exp * 1000 <
+          Date.now()
+        : false;
+
+    /**
+     * Access token is expired.
+     *
+     * Keep the refresh token and mark auth as
+     * NOT INITIALIZED.
+     *
+     * useAuth() will trigger a request and the
+     * baseQueryWithReauth will refresh the token.
+     */
+    if (isExpired) {
+      return {
+        accessToken: null,
+        refreshToken,
+        user: decoded,
+        isAuthenticated: false,
+
+        // IMPORTANT
+        isInitialized: !refreshToken,
+      };
+    }
+
+    /**
+     * Access token is valid.
+     */
+    return {
+      accessToken,
+      refreshToken,
+      user: decoded,
+      isAuthenticated: true,
+      isInitialized: false,
+    };
+  } catch (error) {
+    console.error(
+      "Failed to decode access token:",
+      error,
+    );
+
+    localStorage.removeItem(
+      "accessToken",
+    );
+
+    /**
+     * Don't remove the refresh token.
+     */
+    return {
+      accessToken: null,
+      refreshToken,
+      user: null,
+      isAuthenticated: false,
+      isInitialized: !refreshToken,
+    };
+  }
+};
+
+const initialState: AuthState =
+  getInitialState();
 
 const authSlice = createSlice({
   name: "auth",
+
   initialState,
+
   reducers: {
     setCredentials: (
       state,
       action: PayloadAction<{
         accessToken: string;
         refreshToken: string;
-      }>
+      }>,
     ) => {
-      const { accessToken, refreshToken } = action.payload;
+      const {
+        accessToken,
+        refreshToken,
+      } = action.payload;
 
       try {
-        const decoded: DecodedToken = jwtDecode(accessToken);
+        const decoded =
+          decodeToken(accessToken);
 
-        state.accessToken = accessToken;
-        state.refreshToken = refreshToken;
-        state.user = decoded;
-        state.isAuthenticated = true;
+        state.accessToken =
+          accessToken;
 
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
-      } catch {
-        // If token is malformed, treat as logout
+        state.refreshToken =
+          refreshToken;
+
+        state.user =
+          decoded;
+
+        state.isAuthenticated =
+          true;
+
+        state.isInitialized =
+          true;
+
+        localStorage.setItem(
+          "accessToken",
+          accessToken,
+        );
+
+        localStorage.setItem(
+          "refreshToken",
+          refreshToken,
+        );
+      } catch (error) {
+        console.error(
+          "Failed to store credentials:",
+          error,
+        );
+
         state.accessToken = null;
         state.refreshToken = null;
         state.user = null;
         state.isAuthenticated = false;
+        state.isInitialized = true;
 
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        localStorage.removeItem(
+          "accessToken",
+        );
+
+        localStorage.removeItem(
+          "refreshToken",
+        );
       }
     },
 
-    // Called by baseQueryWithReauth after a successful token refresh
     updateAccessToken: (
       state,
       action: PayloadAction<{
         accessToken: string;
         refreshToken: string;
-      }>
+      }>,
     ) => {
-      const { accessToken, refreshToken } = action.payload;
+      const {
+        accessToken,
+        refreshToken,
+      } = action.payload;
 
       try {
-        const decoded: DecodedToken = jwtDecode(accessToken);
+        const decoded =
+          decodeToken(accessToken);
 
-        state.accessToken = accessToken;
-        state.refreshToken = refreshToken;
-        state.user = decoded;
-        state.isAuthenticated = true;
+        state.accessToken =
+          accessToken;
 
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
-      } catch {
+        state.refreshToken =
+          refreshToken;
+
+        state.user =
+          decoded;
+
+        state.isAuthenticated =
+          true;
+
+        state.isInitialized =
+          true;
+
+        localStorage.setItem(
+          "accessToken",
+          accessToken,
+        );
+
+        localStorage.setItem(
+          "refreshToken",
+          refreshToken,
+        );
+      } catch (error) {
+        console.error(
+          "Failed to update access token:",
+          error,
+        );
+
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.user = null;
         state.isAuthenticated = false;
+        state.isInitialized = true;
+
+        localStorage.removeItem(
+          "accessToken",
+        );
+
+        localStorage.removeItem(
+          "refreshToken",
+        );
       }
     },
 
@@ -115,13 +270,70 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.user = null;
-      state.isAuthenticated = false;
 
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      state.isAuthenticated =
+        false;
+
+      state.isInitialized =
+        true;
+
+      localStorage.removeItem(
+        "accessToken",
+      );
+
+      localStorage.removeItem(
+        "refreshToken",
+      );
     },
+  },
+
+  extraReducers: (builder) => {
+    builder
+
+      .addMatcher(
+        authApi.endpoints
+          .getCurrentUser
+          .matchFulfilled,
+
+        (state, action) => {
+          if (!state.user) {
+            return;
+          }
+
+          state.user = {
+            ...state.user,
+            ...action.payload.user,
+
+            roles: normalizeRoles(
+              action.payload.user.roles,
+            ),
+          };
+
+          state.isAuthenticated =
+            true;
+
+          state.isInitialized =
+            true;
+        },
+      )
+
+      .addMatcher(
+        authApi.endpoints
+          .getCurrentUser
+          .matchRejected,
+
+        (state) => {
+          state.isInitialized =
+            true;
+        },
+      );
   },
 });
 
-export const { setCredentials, updateAccessToken, logout } = authSlice.actions;
+export const {
+  setCredentials,
+  updateAccessToken,
+  logout,
+} = authSlice.actions;
+
 export default authSlice.reducer;

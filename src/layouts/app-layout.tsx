@@ -4,20 +4,23 @@ import { Outlet } from "react-router-dom";
 
 const AppLayout = () => {
   return (
-    <>
-      <div className="w-full min-h-screen pb-10">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* SideBar controls its own visibility (hidden lg:flex) and width —
+          render it directly as a flex sibling, don't wrap it in another
+          breakpoint here or the two can fight each other. */}
+      <SideBar />
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Navbar />
-        <main className="mx-auto flex min-w-0 max-w-7xl grow flex-col sm:flex-row sm:py-6">
-          <SideBar />
-          <div
-            style={{ scrollbarWidth: "none" }}
-            className="flex w-screen grow flex-col overflow-y-auto px-4 sm:w-full sm:p-6"
-          >
-            <Outlet />
-          </div>
+
+        <main
+          style={{ scrollbarWidth: "none" }}
+          className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
+        >
+          <Outlet />
         </main>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -21,7 +21,7 @@ const PageLayout = ({
   addMarginTop = false,
 }: PropsType) => {
   return (
-    <div>
+    <main className="w-full min-w-0">
       {showHeader && (
         <PageHeader
           title={title}
@@ -29,16 +29,17 @@ const PageLayout = ({
           rightAction={rightAction}
         />
       )}
+
       <div
         className={cn(
-          "w-full max-w-[var(--max-width)] mx-auto pt-8",
+          "w-full min-w-0 px-4 pb-6 pt-4 sm:px-5 lg:px-6",
           addMarginTop && "-mt-20",
           className
         )}
       >
         {children}
       </div>
-    </div>
+    </main>
   );
 };
 

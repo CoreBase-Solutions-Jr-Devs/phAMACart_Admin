@@ -7,7 +7,7 @@ const CompanyProfile = () => {
       title="Company Profile"
       subtitle="View and update your company's public details, contacts and addresses."
     >
-      <div className="w-full h-auto">
+      <div className="mx-auto w-full max-w-[1600px]">
         <CompanyProfileForm />
       </div>
     </PageLayout>

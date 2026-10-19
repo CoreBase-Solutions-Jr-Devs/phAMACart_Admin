@@ -22,13 +22,25 @@ import { cn } from "@/lib/utils";
 const chartData: any[] = []; // replace later with API data
 
 const CHART_TYPES = {
-  orders: { label: "Total Orders", color: "var(--primary)" },
-  revenue: { label: "Revenue (KES)", color: "var(--chart-2)" },
+  orders: {
+    label: "Total Orders",
+    color: "var(--primary)",
+  },
+  revenue: {
+    label: "Revenue (KES)",
+    color: "var(--chart-2)",
+  },
 } as const;
 
 const chartConfig: ChartConfig = {
-  orders: { label: "Orders", color: "var(--primary)" },
-  revenue: { label: "Revenue", color: "var(--chart-2)" },
+  orders: {
+    label: "Orders",
+    color: "var(--primary)",
+  },
+  revenue: {
+    label: "Revenue",
+    color: "var(--chart-2)",
+  },
 };
 
 const formatRevenue = (value: number) =>
@@ -41,39 +53,54 @@ export function OverviewChart() {
   const isEmpty = chartData.length === 0;
 
   const totals = {
-    orders: chartData.reduce((a, b) => a + (b.orders || 0), 0),
-    revenue: chartData.reduce((a, b) => a + (b.revenue || 0), 0),
+    orders: chartData.reduce(
+      (total, item) => total + (item.orders || 0),
+      0
+    ),
+    revenue: chartData.reduce(
+      (total, item) => total + (item.revenue || 0),
+      0
+    ),
   };
 
   return (
-    <Card className="pt-5 lg:pt-0 border-border/60 shadow-xs">
+    <Card className="h-fit self-start border-border/60 shadow-xs">
       {/* Header */}
-      <CardHeader className="flex flex-row justify-between px-6 py-5 border-b">
+      <CardHeader className="border-b px-5 py-4">
         <div>
-          <CardTitle className="text-base">Sales Report</CardTitle>
-          <CardDescription className="text-xs">
+          <CardTitle className="text-sm font-semibold">
+            Sales Report
+          </CardTitle>
+
+          <CardDescription className="mt-0.5 text-xs">
             Overview of orders and revenue
           </CardDescription>
         </div>
 
         {!isEmpty && (
-          <div className="flex">
+          <div className="mt-4 flex overflow-hidden rounded-lg border">
             {Object.entries(CHART_TYPES).map(([key, config]) => {
-              const value = totals[key as keyof typeof totals];
+              const chartKey = key as keyof typeof totals;
+              const value = totals[chartKey];
 
               return (
                 <button
                   key={key}
-                  onClick={() => setActiveChart(key as any)}
+                  type="button"
+                  onClick={() =>
+                    setActiveChart(key as keyof typeof CHART_TYPES)
+                  }
                   className={cn(
-                    "px-6 py-3 text-left",
+                    "flex-1 px-4 py-2.5 text-left transition-colors",
+                    "hover:bg-muted/60",
                     activeChart === key && "bg-muted"
                   )}
                 >
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground">
                     {config.label}
                   </p>
-                  <p className="text-xl font-bold">
+
+                  <p className="mt-0.5 text-sm font-semibold tracking-tight">
                     {key === "revenue"
                       ? formatRevenue(value)
                       : value.toLocaleString()}
@@ -86,31 +113,50 @@ export function OverviewChart() {
       </CardHeader>
 
       {/* Body */}
-      <CardContent className="p-6">
+      <CardContent className="px-5 py-5">
         {isEmpty ? (
-          // ── EMPTY STATE ─────────────────────────────────────────────
-          <div className="h-[250px] flex flex-col items-center justify-center text-center">
-            <p className="text-sm font-medium">No analytics data yet</p>
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="flex min-h-[170px] flex-col items-center justify-center text-center">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+              <span className="text-sm text-muted-foreground">↗</span>
+            </div>
+
+            <p className="text-sm font-medium">
+              No analytics data yet
+            </p>
+
+            <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-muted-foreground">
               Sales reports will appear once orders start coming in.
             </p>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[250px]">
-            <BarChart data={chartData}>
+          <ChartContainer
+            config={chartConfig}
+            className="h-[240px] w-full"
+          >
+            <BarChart
+              data={chartData}
+              margin={{
+                top: 8,
+                right: 4,
+                left: 4,
+                bottom: 4,
+              }}
+            >
               <CartesianGrid vertical={false} />
 
               <XAxis
                 dataKey="date"
-                tickFormatter={(v) =>
-                  new Date(v).toLocaleDateString("en-US", {
+                tickFormatter={(value) =>
+                  new Date(value).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                   })
                 }
               />
 
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip
+                content={<ChartTooltipContent />}
+              />
 
               <Bar
                 dataKey={activeChart}
@@ -118,19 +164,22 @@ export function OverviewChart() {
                 radius={[4, 4, 0, 0]}
               />
 
-              <ChartLegend content={<ChartLegendContent />} />
+              <ChartLegend
+                content={<ChartLegendContent />}
+              />
             </BarChart>
           </ChartContainer>
         )}
 
-        {/* Fulfillment can also be hidden if no data */}
         {!isEmpty && (
-          <OrderFulfillmentRate
-            completed={120}
-            pending={40}
-            cancelled={15}
-            total={175}
-          />
+          <div className="mt-5 border-t pt-5">
+            <OrderFulfillmentRate
+              completed={120}
+              pending={40}
+              cancelled={15}
+              total={175}
+            />
+          </div>
         )}
       </CardContent>
     </Card>

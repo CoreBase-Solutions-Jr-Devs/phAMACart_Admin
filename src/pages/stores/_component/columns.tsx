@@ -32,10 +32,6 @@ export const storesColumn = ({ onDelete }: Props): ColumnDef<Stores>[] => [
     header: "Longitude",
   },
   {
-    accessorKey: "distanceKm",
-    header: "DistanceKm",
-  },
-  {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {

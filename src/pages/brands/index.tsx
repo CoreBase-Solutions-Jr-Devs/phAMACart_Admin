@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BrandFormDialog } from "./_component/brand-form-dialog";
 import { PlusIcon } from "lucide-react";
 
-const Categories = () => {
+const Brands = () => {
   return (
     <PageLayout
       title="Brands"
@@ -18,11 +18,11 @@ const Categories = () => {
         </BrandFormDialog>
       }
     >
-      <div className="w-full mt-4">
+      <div className="mx-auto mt-4 w-full max-w-[1600px]">
         <BrandTable />
       </div>
     </PageLayout>
   );
 };
 
-export default Categories;
+export default Brands;

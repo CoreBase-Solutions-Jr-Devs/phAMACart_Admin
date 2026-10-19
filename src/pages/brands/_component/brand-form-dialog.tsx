@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { X, ImageIcon } from "lucide-react";
 import { Brand } from "@/features/brands/brandsType";
 import { useCreateBrandMutation } from "@/features/brands/brandsAPI";
@@ -22,6 +23,7 @@ import { parseError } from "@/lib/parse-error";
 ========================= */
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(100),
+  description: z.string().min(1, "Description is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -35,6 +37,7 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [createBrand, { isLoading }] = useCreateBrandMutation();
@@ -47,6 +50,10 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
+    defaultValues: {
+      name: "",
+      description: "",
+    },
   });
 
   /* =========================
@@ -56,7 +63,9 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
     if (brand && isOpen) {
       reset({
         name: brand.name,
+        description: brand.description ?? "",
       });
+
       setPreview(brand.brandImageUrl || null);
       setImageFile(null);
     }
@@ -72,14 +81,21 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+
     const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
+
+    if (file) {
+      handleFile(file);
+    }
   };
 
   const clearImage = () => {
     setImageFile(null);
-    setPreview(brand?.brandImageUrl || null);
-    if (fileRef.current) fileRef.current.value = "";
+    setPreview(null);
+
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
   };
 
   /* =========================
@@ -87,13 +103,22 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
   ========================= */
   const onSubmit = async (data: FormValues) => {
     try {
+      if (!imageFile) {
+        toast.error("Please upload a brand image.");
+        return;
+      }
+
       await createBrand({
-        id: brand?.id || "",
         name: data.name,
-        brandImageFile: imageFile ? [imageFile] : undefined,
+        description: data.description,
+        brandImageFile: imageFile,
       }).unwrap();
 
-      toast.success("Brand saved successfully.");
+      toast.success("Brand created successfully.");
+
+      reset();
+      setImageFile(null);
+      setPreview(null);
       setIsOpen(false);
     } catch (err) {
       toast.error(parseError(err));
@@ -109,13 +134,22 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Brands</DialogTitle>
+          <DialogTitle>Create Brand</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* BRAND */}
+          {/* NAME */}
           <div>
-            <Input placeholder="Brand" {...register("name")} />
+            <Input placeholder="Brand name" {...register("name")} />
+          </div>
+
+          {/* DESCRIPTION */}
+          <div>
+            <Textarea
+              placeholder="Brand description"
+              rows={4}
+              {...register("description")}
+            />
           </div>
 
           {/* IMAGE */}
@@ -126,7 +160,11 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
             onClick={() => fileRef.current?.click()}
           >
             {preview ? (
-              <img src={preview} className="max-h-40 mx-auto object-contain" />
+              <img
+                src={preview}
+                alt="Preview"
+                className="max-h-40 mx-auto object-contain"
+              />
             ) : (
               <>
                 <ImageIcon className="mx-auto mb-2" />
@@ -138,14 +176,23 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
           <input
             ref={fileRef}
             type="file"
+            accept=".jpg,.jpeg,.png"
             hidden
-            onChange={(e) =>
-              e.target.files?.[0] && handleFile(e.target.files[0])
-            }
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+
+              if (file) {
+                handleFile(file);
+              }
+            }}
           />
 
           {imageFile && (
-            <Button type="button" variant="outline" onClick={clearImage}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearImage}
+            >
               <X className="w-4 h-4 mr-2" />
               Remove Image
             </Button>
@@ -157,7 +204,7 @@ export const BrandFormDialog = ({ brand, children }: Props) => {
             disabled={!isValid || isLoading}
             className="w-full"
           >
-            {isLoading ? "Saving..." : "Save Changes"}
+            {isLoading ? "Creating..." : "Create Brand"}
           </Button>
         </form>
       </DialogContent>

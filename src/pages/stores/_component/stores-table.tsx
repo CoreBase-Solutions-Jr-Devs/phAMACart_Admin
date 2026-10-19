@@ -118,7 +118,7 @@ const StoresTable = () => {
         isLoading={isFetching}
         selection={false}
         showSearch={false}
-        emptyTitle="No Categories found"
+        emptyTitle="No Stores found"
         isShowPagination={true}
         pagination={pagination}
         onPageChange={handlePageChange}

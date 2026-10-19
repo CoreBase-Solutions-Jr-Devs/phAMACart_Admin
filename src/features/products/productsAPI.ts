@@ -1,40 +1,5 @@
 import { apiClient } from "@/app/api-client";
-
-export interface Product {
-  id: string;
-  name: string;
-  externalName: string;
-  isNameOverridden: boolean;
-  categoryId: string;
-  categoryName: string;
-  thirdPartyId?: string | null;
-  description: string;
-  imageUrl?: string | null;
-  brandName?: string | null;
-  price: number;
-  isPrescription: boolean;
-}
-
-export interface GetProductsParams {
-  search?: string;
-  brand?: string;
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  sortBy?: string;
-  descending?: boolean;
-  pageIndex?: number;
-  pageSize?: number;
-}
-
-export interface GetProductsResponse {
-  products: {
-    pageIndex: number;
-    pageSize: number;
-    count: number;
-    data: Product[];
-  };
-}
+import { Product, GetProductsResponse, GetProductsParams, TriggerProductSyncResponse, UpdateProductPayload } from "./productsType";
 
 export const productsApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
@@ -47,36 +12,30 @@ export const productsApi = apiClient.injectEndpoints({
       providesTags: ["products"],
     }),
 
-    updateProduct: builder.mutation<
-      Product,
-      {
-        id: string;
-        categoryId: string;
-        name?: string;
-        description?: string;
-        brandName?: string;
-        price?: number;
-        imageUrl?: string | null;
-        imageUrls?: string[];
-        removeMainImage?: boolean;
-        removeAllImages?: boolean;
-        imageFiles?: File[];
-      }
-      >({
-      query: ({ id, imageFiles, ...rest }) => {
+    triggerProductSync: builder.mutation<TriggerProductSyncResponse, void>({
+      query: () => ({
+        url: "/products-sync/immediate",
+        method: "POST",
+      }),
+      invalidatesTags: ["products"],
+    }),
+
+    updateProduct: builder.mutation<Product, UpdateProductPayload>({
+      query: ({ mainImageFile, galleryImageFiles, ...rest }) => {
         const formData = new FormData();
 
-        formData.append(
-          "product",
-          JSON.stringify({
-            id,
-            ...rest,
-          })
-        );
+        // Backend expects a `product` part containing the JSON DTO
+        formData.append("product", JSON.stringify(rest));
 
-        if (imageFiles && imageFiles.length > 0) {
-          imageFiles.forEach((file) => {
-            formData.append("imageFiles", file);
+        // Single main image (backend: IFormFile? MainImageFile)
+        if (mainImageFile) {
+          formData.append("mainImageFile", mainImageFile);
+        }
+
+        // Gallery images (backend: List<IFormFile>? GalleryImageFiles)
+        if (galleryImageFiles && galleryImageFiles.length > 0) {
+          galleryImageFiles.forEach((file) => {
+            formData.append("galleryImageFiles", file);
           });
         }
 
@@ -87,34 +46,48 @@ export const productsApi = apiClient.injectEndpoints({
         };
       },
       transformErrorResponse: (response: any) => {
-    const data = response?.data;
+        const data = response?.data;
 
-    // ✅ Domain-specific handling
-    if (data?.title === "CategoryNotLeafException") {
-      return {
-        message: "Please select a valid sub-category (last level).",
-        code: "CATEGORY_NOT_LEAF",
-      };
-    }
+        // Domain-specific handling
+        if (data?.title === "CategoryNotLeafException") {
+          return {
+            message: "Please select a valid sub-category (last level).",
+            code: "CATEGORY_NOT_LEAF",
+          };
+        }
 
-    // ✅ Validation errors
-    if (data?.errors) {
-      const messages = Object.values(data.errors).flat();
-      return {
-        message: messages.join(", "),
-        code: "VALIDATION_ERROR",
-      };
-    }
+        if (data?.title === "ProductAlreadyExistsException") {
+          return {
+            message: "A product with this name already exists.",
+            code: "PRODUCT_ALREADY_EXISTS",
+          };
+        }
 
-    // ✅ Generic fallback
-    return {
-      message:
-        data?.detail ||
-        data?.title ||
-        "Something went wrong. Please try again.",
-      code: "UNKNOWN",
-    };
-  },
+        if (data?.title === "CategoryNotFoundException") {
+          return {
+            message: "Selected category was not found.",
+            code: "CATEGORY_NOT_FOUND",
+          };
+        }
+
+        // FluentValidation / model-state errors
+        if (data?.errors) {
+          const messages = Object.values(data.errors).flat();
+          return {
+            message: messages.join(", "),
+            code: "VALIDATION_ERROR",
+          };
+        }
+
+        // Generic fallback
+        return {
+          message:
+            data?.detail ||
+            data?.title ||
+            "Something went wrong. Please try again.",
+          code: "UNKNOWN",
+        };
+      },
       invalidatesTags: ["products"],
     }),
 
@@ -130,6 +103,8 @@ export const productsApi = apiClient.injectEndpoints({
 
 export const {
   useGetProductsQuery,
+  useLazyGetProductsQuery,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useTriggerProductSyncMutation, 
 } = productsApi;

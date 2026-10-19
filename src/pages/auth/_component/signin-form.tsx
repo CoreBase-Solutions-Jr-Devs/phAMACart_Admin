@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useAppDispatch } from "@/app/hook";
 import { setCredentials } from "@/features/auth/authSlice";
 import { Loader } from "lucide-react";
+import { parseError } from "@/lib/parse-error";
 
 const schema = z.object({
   identifier: z.string().trim().min(1, {
@@ -54,8 +55,8 @@ const SignInForm = ({
         }, 1000);
       })
       .catch((error) => {
-        console.log(error);
-        toast.error(error.data?.message || "Failed to login");
+        const errorMessage = parseError(error);
+        toast.error(errorMessage);
       });
   };
 

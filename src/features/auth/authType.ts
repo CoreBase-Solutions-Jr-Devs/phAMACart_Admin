@@ -1,6 +1,6 @@
-export type loginType = { 
+export type loginType = {
   identifier: string;
-  password: string 
+  password: string
 };
 
 export type LoginRequestBody = {
@@ -13,12 +13,12 @@ export type LoginResponseType = {
   refreshToken: string;
   accessTokenExpiresAtUtc: string;
   user: {
-    id: string;          
+    id: string;
     userName: string;
     email: string;
     phoneNumber: string;
     roles: string[];
-    currentWorkspace?: string; 
+    currentWorkspace?: string;
   };
 };
 
@@ -27,6 +27,7 @@ export type DecodedToken = {
   email: string;
   unique_name: string;
   role: string | string[];
+  roles: string[];
   exp: number;
   iss: string;
   aud: string;
@@ -37,6 +38,7 @@ export type AuthState = {
   refreshToken: string | null;
   user: DecodedToken | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
 };
 
 export type CurrentUserResponseType = {

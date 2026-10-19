@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table";
 
 import {
   useDeleteCategoryMutation,
-  useGetCategoriesFlatQuery,
+  useGetCategoriesTreeQuery,
 } from "@/features/categories/categoriesAPI";
+
+import { Category } from "@/features/categories/categoriesType";
+
 import { categoryColumn } from "./columns";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -16,67 +21,119 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { toast } from "sonner";
 import { parseError } from "@/lib/parse-error";
+
+/* =========================
+   FLATTEN TREE
+========================= */
+
+type HierarchyCategory = Category & {
+  depth: number;
+};
+
+const flattenCategories = (
+  categories: Category[],
+  depth = 0,
+): HierarchyCategory[] => {
+  return categories.flatMap((category) => [
+    {
+      ...category,
+      depth,
+    },
+
+    ...(category.children?.length
+      ? flattenCategories(
+          category.children,
+          depth + 1,
+        )
+      : []),
+  ]);
+};
 
 const CategoriesTable = () => {
   const [filter, setFilter] = useState({
     search: "",
     pageNumber: 1,
     pageSize: 20,
-    minPrice: 0,
-    maxPrice: 2000,
-    categoryId: "",
-    brand: "",
   });
 
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] =
+    useState<string | null>(null);
 
   /* =========================
      DATA
   ========================= */
 
-  const { data: categoriesData, isFetching } = useGetCategoriesFlatQuery();
+  const {
+    data: categoriesData,
+    isFetching,
+  } = useGetCategoriesTreeQuery();
 
-  const [deleteCategoryMutation, { isLoading: isDeleting }] =
-    useDeleteCategoryMutation();
+  const [
+    deleteCategoryMutation,
+    { isLoading: isDeleting },
+  ] = useDeleteCategoryMutation();
 
-  const categories = categoriesData?.categories || [];
+  const categories = useMemo(() => {
+    return flattenCategories(
+      categoriesData?.categories ?? [],
+    );
+  }, [categoriesData]);
 
   /* =========================
      PAGINATION
   ========================= */
 
   const pagination = {
-    totalCount: categories.length || 0,
-    totalPages: Math.ceil((categories.length || 0) / filter.pageSize),
+    totalCount: categories.length,
+    totalPages: Math.ceil(
+      categories.length / filter.pageSize,
+    ),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,
   };
 
-  const handlePageChange = (pageNumber: number) => {
-    setFilter((prev) => ({ ...prev, pageNumber }));
+  const handlePageChange = (
+    pageNumber: number,
+  ) => {
+    setFilter((prev) => ({
+      ...prev,
+      pageNumber,
+    }));
   };
 
-  const handlePageSizeChange = (pageSize: number) => {
-    setFilter((prev) => ({ ...prev, pageSize, pageNumber: 1 }));
+  const handlePageSizeChange = (
+    pageSize: number,
+  ) => {
+    setFilter((prev) => ({
+      ...prev,
+      pageSize,
+      pageNumber: 1,
+    }));
   };
 
   /* =========================
      DELETE
   ========================= */
 
-  // Called by the table row — opens the confirm dialog
   const handleDelete = (id: string) => {
     setPendingDeleteId(id);
   };
 
-  // Called when the user confirms inside the dialog
   const handleConfirmDelete = async () => {
     if (!pendingDeleteId) return;
+
     try {
-      await deleteCategoryMutation(pendingDeleteId).unwrap();
-      toast.success("Category deleted successfully.");
+      await deleteCategoryMutation(
+        pendingDeleteId,
+      ).unwrap();
+
+      toast.success(
+        "Category deleted successfully.",
+      );
+
       setPendingDeleteId(null);
     } catch (err) {
       toast.error(parseError(err));
@@ -122,38 +179,52 @@ const CategoriesTable = () => {
         isShowPagination={true}
         pagination={pagination}
         onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
+        onPageSizeChange={
+          handlePageSizeChange
+        }
       />
 
-      {/* DELETE CONFIRM DIALOG */}
+      {/* DELETE DIALOG */}
       <Dialog
         open={!!pendingDeleteId}
         onOpenChange={(open) => {
-          if (!open) setPendingDeleteId(null);
+          if (!open) {
+            setPendingDeleteId(null);
+          }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>
+              Delete Category
+            </DialogTitle>
+
             <DialogDescription>
-              Are you sure you want to delete this category? This action cannot
-              be undone.
+              Are you sure you want to delete
+              this category? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
+
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setPendingDeleteId(null)}
+              onClick={() =>
+                setPendingDeleteId(null)
+              }
               disabled={isDeleting}
             >
               Cancel
             </Button>
+
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting
+                ? "Deleting..."
+                : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

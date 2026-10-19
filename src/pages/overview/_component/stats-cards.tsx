@@ -4,6 +4,8 @@ import {
   Package,
   ShoppingCart,
   Banknote,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -30,10 +32,23 @@ const STATS_CONFIG = [
     iconBg: "bg-green-500/10",
     iconColor: "text-green-600",
   },
+  {
+    key: "customers",
+    label: "CUSTOMERS",
+    icon: Users,
+    iconBg: "bg-purple-500/10",
+    iconColor: "text-purple-600",
+  },
 ] as const;
 
-// ── No Data Yet ────────────────────────────────────────────────────────────
-const statsData: Record<string, { value: string | number; change: number }> = {};
+// ── No Data Yet ──────────────────────────────────────────────────────────
+const statsData: Record<
+  string,
+  {
+    value: string | number;
+    change: number;
+  }
+> = {};
 
 // ── Badge ─────────────────────────────────────────────────────────────────
 function StatBadge({ value }: { value: number }) {
@@ -42,13 +57,66 @@ function StatBadge({ value }: { value: number }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
+      className={`inline-flex shrink-0 items-center gap-1 text-[10px] font-medium ${
         positive ? "text-green-600" : "text-destructive"
       }`}
     >
-      <Icon size={10} />
-      {Math.abs(value)}% (last month)
+      <Icon className="h-2.5 w-2.5" />
+      {Math.abs(value)}%
+      <span className="text-muted-foreground">last month</span>
     </span>
+  );
+}
+
+// ── Stat Card ─────────────────────────────────────────────────────────────
+function StatCard({
+  config,
+  stat,
+  isEmpty,
+}: {
+  config: (typeof STATS_CONFIG)[number];
+  stat?: {
+    value: string | number;
+    change: number;
+  };
+  isEmpty: boolean;
+}) {
+  const Icon = config.icon as LucideIcon;
+
+  return (
+    <Card className="w-full min-w-0 border-border/60 shadow-xs">
+      <CardContent className="px-4 py-3.5">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          {/* Left */}
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${config.iconBg}`}
+            >
+              <Icon className={`h-3.5 w-3.5 ${config.iconColor}`} />
+            </span>
+
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium tracking-wide text-muted-foreground">
+                {config.label}
+              </p>
+
+              {isEmpty ? (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  No data yet
+                </p>
+              ) : (
+                <p className="mt-0.5 truncate text-lg font-semibold tracking-tight">
+                  {stat?.value ?? "—"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Right */}
+          {!isEmpty && stat && <StatBadge value={stat.change} />}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -57,51 +125,36 @@ const StatsCards = () => {
   const isEmpty = Object.keys(statsData).length === 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-      {STATS_CONFIG.map((config) => {
-        const stat = statsData[config.key];
-        const Icon = config.icon;
+    <div
+      className="
+        grid w-full grid-cols-1 gap-4
+        sm:grid-cols-2
+        xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,1fr)]
+      "
+    >
+      {/* Left: aligns with Recent Orders */}
+      <div className="grid min-w-0 grid-cols-2 gap-3">
+        {STATS_CONFIG.slice(0, 2).map((config) => (
+          <StatCard
+            key={config.key}
+            config={config}
+            stat={statsData[config.key]}
+            isEmpty={isEmpty}
+          />
+        ))}
+      </div>
 
-        return (
-          <Card key={config.key} className="border-border/60">
-            <CardContent className="pt-3 pb-3">
-              <div className="flex flex-col gap-1.5">
-                {/* Header */}
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`flex items-center justify-center w-6 h-6 rounded-lg ${config.iconBg}`}
-                  >
-                    <Icon size={12} className={config.iconColor} />
-                  </span>
-
-                  <span className="text-[9px] font-semibold tracking-wider text-muted-foreground">
-                    {config.label}
-                  </span>
-                </div>
-
-                {/* EMPTY STATE PER CARD */}
-                {isEmpty ? (
-                  <div className="py-2">
-                    <p className="text-xs text-muted-foreground">
-                      No data yet
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Value */}
-                    <p className="text-lg font-bold text-foreground leading-none">
-                      {stat?.value ?? "—"}
-                    </p>
-
-                    {/* Change */}
-                    {stat && <StatBadge value={stat.change} />}
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      {/* Right: aligns with Sales Report */}
+      <div className="grid min-w-0 grid-cols-2 gap-3">
+        {STATS_CONFIG.slice(2, 4).map((config) => (
+          <StatCard
+            key={config.key}
+            config={config}
+            stat={statsData[config.key]}
+            isEmpty={isEmpty}
+          />
+        ))}
+      </div>
     </div>
   );
 };

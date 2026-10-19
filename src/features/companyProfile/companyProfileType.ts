@@ -23,6 +23,7 @@ export interface Address {
 
 export interface CompanyProfileUser {
   userId: string;
+  name: string;
   role: "Admin" | "SuperAdmin";
 }
 

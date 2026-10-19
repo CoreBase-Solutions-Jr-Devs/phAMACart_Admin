@@ -7,7 +7,7 @@ const Stores = () => {
       title="Stores"
       subtitle="View and update your stores' public details, contacts and addresses."
     >
-      <div className="w-full h-auto">
+      <div className="mx-auto mt-4 w-full max-w-[1600px]">
         <StoresTable />
       </div>
     </PageLayout>

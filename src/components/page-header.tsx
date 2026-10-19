@@ -6,26 +6,32 @@ interface PageHeaderProps {
   rightAction?: ReactNode;
 }
 
-const PageHeader = ({ title, subtitle, rightAction }: PageHeaderProps) => {
+const PageHeader = ({
+  title,
+  subtitle,
+  rightAction,
+}: PageHeaderProps) => {
   return (
     <div className="w-full px-5 lg:px-0 dark:text-white">
       <div className="w-full mx-auto">
-        <div className="w-full flex flex-col gap-3 items-start justify-start lg:items-center lg:flex-row lg:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {(title || subtitle) && (
             <div className="space-y-1">
               {title && (
-                <h1 className="break-normal font-bold text-lg sm:text-2xl">
+                <h1 className="text-lg sm:text-2xl font-bold">
                   {title}
                 </h1>
               )}
+
               {subtitle && (
-                <p className="text-muted-foreground text-xs sm:text-sm">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {subtitle}
                 </p>
               )}
             </div>
           )}
-          {rightAction && rightAction}
+
+          {rightAction}
         </div>
       </div>
     </div>

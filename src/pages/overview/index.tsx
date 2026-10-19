@@ -2,39 +2,50 @@ import { OverviewChart } from "./_component/overview-chart";
 import RecentOrders from "./_component/recent-orders";
 import StatsCards from "./_component/stats-cards";
 import { useTypedSelector } from "@/app/hook";
-// import QuickActions from "./_component/quick-actions";
 
-// ── Component ────────────────────────────────────────────────────────────────
 const Overview = () => {
-    const { user } = useTypedSelector((state) => state.auth);
+  const { user } = useTypedSelector((state) => state.auth);
 
   return (
-    <div className="space-y-6 pt-5 lg:pt-0">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Greeting */}
-        <div className="flex flex-col gap-1">
-          <h1 className="font-semibold text-lg sm:text-xl">
-            Hello, {user?.unique_name} 👋
-          </h1>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            Here’s what’s happening in your store today.
-          </p>
-        </div>
+    <main className="w-full px-4 py-4 sm:px-5 lg:px-6">
+      <div className="w-full space-y-4">
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-semibold tracking-tight sm:text-lg">
+              Hello, {user?.unique_name} 👋
+            </h1>
 
-        {/* Quick Actions (right side) */}
-        {/* <QuickActions /> */}
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              Here’s what’s happening in your store today.
+            </p>
+          </div>
+        </header>
+
+        {/* Stats */}
+        <section className="w-full">
+          <StatsCards />
+        </section>
+
+        {/* Dashboard */}
+        <section
+          className="
+            grid w-full grid-cols-1 gap-4
+            xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,1fr)]
+          "
+        >
+          {/* Recent Orders */}
+          <div className="min-w-0">
+            <RecentOrders />
+          </div>
+
+          {/* Sales Report */}
+          <div className="min-w-0">
+            <OverviewChart />
+          </div>
+        </section>
       </div>
-
-      {/* Stats */}
-      <StatsCards />
-
-      {/* Main Content */}
-      <div className="flex flex-col gap-6">
-        <RecentOrders />
-        <OverviewChart />
-      </div>
-    </div>
+    </main>
   );
 };
 

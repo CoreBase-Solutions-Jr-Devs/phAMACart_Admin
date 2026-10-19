@@ -12,16 +12,16 @@ export const companyProfileApi = apiClient.injectEndpoints({
         method: "GET",
       }),
 
-      // flatten API response
-      transformResponse: (response: { companyProfile: CompanyProfile }) =>
-        response.companyProfile,
+      transformResponse: (response: {
+        companyProfile: CompanyProfile;
+      }) => response.companyProfile,
 
       providesTags: ["company_profile"],
     }),
 
     /* =========================
        UPDATE COMPANY PROFILE
-       (basic form-data example)
+       multipart/form-data
     ========================= */
     updateCompanyProfile: builder.mutation<
       CompanyProfile,
@@ -29,30 +29,94 @@ export const companyProfileApi = apiClient.injectEndpoints({
         id: string;
         name?: string;
         chatLink?: string;
+
+        phones?: CompanyProfile["phones"];
+        emails?: CompanyProfile["emails"];
+        addresses?: CompanyProfile["addresses"];
+
         logoFile?: File | null;
         pharmacyLicenseFile?: File | null;
       }
     >({
-      query: ({ id, name, chatLink, logoFile, pharmacyLicenseFile }) => {
+      query: ({
+        id,
+        name,
+        chatLink,
+        phones,
+        emails,
+        addresses,
+        logoFile,
+        pharmacyLicenseFile,
+      }) => {
         const formData = new FormData();
 
-        const append = (key: string, value: unknown) => {
+        const append = (
+          key: string,
+          value: unknown,
+        ) => {
           if (value !== undefined && value !== null) {
             formData.append(key, String(value));
           }
         };
 
-        console.log(logoFile, pharmacyLicenseFile);
+        /*
+         * Basic profile information.
+         *
+         * Keep this as JSON because the existing backend
+         * endpoint already expects the profile object here.
+         */
+        append(
+          "profile",
+          JSON.stringify({
+            id,
+            name,
+          }),
+        );
 
-        append("profile", JSON.stringify({ id, name }));
-        // append("name", name);
         append("chatLink", chatLink);
 
+        /*
+         * Contact information
+         */
+        if (phones !== undefined) {
+          formData.append(
+            "phones",
+            JSON.stringify(phones),
+          );
+        }
+
+        if (emails !== undefined) {
+          formData.append(
+            "emails",
+            JSON.stringify(emails),
+          );
+        }
+
+        /*
+         * Company addresses
+         *
+         * This now contains both manually entered addresses
+         * and addresses resolved from the current location.
+         */
+        if (addresses !== undefined) {
+          formData.append(
+            "addresses",
+            JSON.stringify(addresses),
+          );
+        }
+
+        /*
+         * Files
+         */
         if (logoFile) {
           formData.append("logoFile", logoFile);
         }
+
         if (pharmacyLicenseFile) {
-          formData.append("pharmacyLicenseFile", pharmacyLicenseFile);
+          formData.append(
+            "pharmacyLicenseFile",
+            pharmacyLicenseFile,
+          );
         }
 
         return {
@@ -70,5 +134,7 @@ export const companyProfileApi = apiClient.injectEndpoints({
 /* =========================
    EXPORT HOOKS
 ========================= */
-export const { useGetCompanyProfileQuery, useUpdateCompanyProfileMutation } =
-  companyProfileApi;
+export const {
+  useGetCompanyProfileQuery,
+  useUpdateCompanyProfileMutation,
+} = companyProfileApi;

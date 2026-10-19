@@ -18,7 +18,7 @@ const Banner = () => {
         </NewBannerFormDialog>
       }
     >
-      <div className="w-full mt-4">
+      <div className="mx-auto mt-4 w-full max-w-[1600px]">
         <BannersTable />
       </div>
     </PageLayout>
