@@ -17,13 +17,25 @@ const notificationSlice = createSlice({
       state,
       action: PayloadAction<NotificationDto[]>
     ) {
-      state.notifications = action.payload;
+      // Merge: keep live (SignalR) notifications that arrived before the
+      // history page loaded, newest first, no duplicates.
+      const loadedIds = new Set(action.payload.map(x => x.id));
+      const liveOnly = state.notifications.filter(x => !loadedIds.has(x.id));
+
+      state.notifications = [...liveOnly, ...action.payload].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     },
 
     notificationReceived(
       state,
       action: PayloadAction<NotificationDto>
     ) {
+      if (state.notifications.some(x => x.id === action.payload.id)) {
+        return;
+      }
+
       state.notifications.unshift(action.payload);
     },
 

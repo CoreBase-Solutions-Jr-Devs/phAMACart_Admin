@@ -1,7 +1,9 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN } from "@/app/api-paths";
 import {
   CreateUserRequest,
   CreateUserResponse,
+  UpdateUserRequest,
   PaginatedResult,
   RoleDto,
   User,
@@ -16,7 +18,7 @@ export const usersAPI = apiClient.injectEndpoints({
       CreateUserRequest
     >({
       query: (body) => ({
-        url: "/identity/users",
+        url: `${ADMIN}/identity/users`,
         method: "POST",
         body,
       }),
@@ -34,7 +36,7 @@ export const usersAPI = apiClient.injectEndpoints({
         pageIndex = 0,
         pageSize = 20,
       }) => ({
-        url: "/identity/users",
+        url: `${ADMIN}/identity/users`,
         method: "GET",
         params: {
           Page: pageIndex,
@@ -44,31 +46,54 @@ export const usersAPI = apiClient.injectEndpoints({
           IsActive: isActive,
         },
       }),
+      providesTags: ["users"],
     }),
 
     getUserById: builder.query<{ user: User }, string>({
       query: (id) => ({
-        url: `/identity/users/${id}`,
+        url: `${ADMIN}/identity/users/${id}`,
         method: "GET",
       }),
+      providesTags: (_r, _e, id) => [{ type: "users", id }],
     }),
 
     updateUser: builder.mutation<
       void,
-      { id: string; body: CreateUserRequest }
+      { id: string; body: UpdateUserRequest }
     >({
       query: ({ id, body }) => ({
-        url: `/identity/users/${id}`,
+        url: `${ADMIN}/identity/users/${id}`,
         method: "PUT",
         body,
       }),
+      invalidatesTags: ["users"],
     }),
 
     deleteUser: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/identity/users/${id}`,
+        url: `${ADMIN}/identity/users/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["users"],
+    }),
+
+    /** Deactivate (reactivate=false) or reactivate an account. Reversible. */
+    setUserStatus: builder.mutation<void, { id: string; reactivate: boolean }>({
+      query: ({ id, reactivate }) => ({
+        url: `${ADMIN}/identity/users/${id}/status`,
+        method: "PUT",
+        body: { reactivate },
+      }),
+      invalidatesTags: ["users"],
+    }),
+
+    /** Clears a lockout caused by too many failed sign-ins. */
+    unlockUser: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `${ADMIN}/identity/users/${id}/unlock`,
+        method: "POST",
+      }),
+      invalidatesTags: ["users"],
     }),
 
     getRoles: builder.query<
@@ -82,7 +107,7 @@ export const usersAPI = apiClient.injectEndpoints({
         pageIndex = 0,
         pageSize = 20,
       }) => ({
-        url: "/identity/roles",
+        url: `${ADMIN}/identity/roles`,
         method: "GET",
         params: {
           PageIndex: pageIndex,
@@ -102,5 +127,7 @@ export const {
   useGetUserByIdQuery,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useSetUserStatusMutation,
+  useUnlockUserMutation,
   useGetRolesQuery,
 } = usersAPI;

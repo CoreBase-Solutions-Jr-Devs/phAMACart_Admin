@@ -13,6 +13,13 @@ import {
   type LucideIcon,
   ClipboardMinus,
   UserCheck,
+  ShoppingCart,
+  SearchCheck,
+  Plug,
+  ShieldCheck,
+  ScrollText,
+  Activity,
+  Network,
 } from "lucide-react";
 
 import { PROTECTED_ROUTES } from "@/routes/common/routePath";
@@ -72,6 +79,11 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Sales",
     routes: [
       {
+        icon: ShoppingCart,
+        href: PROTECTED_ROUTES.ORDERS,
+        label: "Orders",
+      },
+      {
         icon: FileText,
         href: PROTECTED_ROUTES.PRESCRIPTIONS,
         label: "Prescriptions",
@@ -86,6 +98,11 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Megaphone,
         href: PROTECTED_ROUTES.BANNER,
         label: "Banners",
+      },
+      {
+        icon: SearchCheck,
+        href: PROTECTED_ROUTES.SEARCH_INSIGHTS,
+        label: "Search Insights",
       },
     ],
   },
@@ -109,6 +126,11 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Company Profile",
       },
       {
+        icon: Plug,
+        href: PROTECTED_ROUTES.INTEGRATIONS,
+        label: "Integrations",
+      },
+      {
         icon: ClipboardMinus,
         href: PROTECTED_ROUTES.REPORTS,
         label: "Reports",
@@ -122,8 +144,38 @@ export const NAV_SECTIONS: NavSection[] = [
   },
 
   {
+    label: "Administration",
+    routes: [
+      {
+        icon: ShieldCheck,
+        href: PROTECTED_ROUTES.ACCESS,
+        label: "Roles & Permissions",
+        roles: ["SuperAdmin", "Admin", "Dev", "Support"],
+      },
+      {
+        icon: ScrollText,
+        href: PROTECTED_ROUTES.AUDIT_LOGS,
+        label: "Audit Logs",
+        roles: ["SuperAdmin", "Admin", "Dev", "Support"],
+      },
+      {
+        icon: Activity,
+        href: PROTECTED_ROUTES.SYSTEM_HEALTH,
+        label: "System Health",
+        roles: ["SuperAdmin", "Admin", "Dev", "Support"],
+      },
+    ],
+  },
+
+  {
     label: "Developer",
     routes: [
+      {
+        icon: Network,
+        href: PROTECTED_ROUTES.TENANTS,
+        label: "Tenants",
+        roles: ["Dev", "Support"],
+      },
       {
         icon: ServerCog,
         href: PROTECTED_ROUTES.TENANTPROVISION,

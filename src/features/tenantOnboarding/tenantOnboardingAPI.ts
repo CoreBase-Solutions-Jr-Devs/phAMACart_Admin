@@ -1,4 +1,5 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN } from "@/app/api-paths";
 
 export type TenantHostTypeLabel =
   | "Client"
@@ -232,7 +233,7 @@ export const tenantProvisionAPI =
           ProvisionTenantRequest
         >({
           query: (request) => ({
-            url: "/tenants/provision",
+            url: `${ADMIN}/tenants/provision`,
             method: "POST",
             body:
               buildProvisionTenantFormData(

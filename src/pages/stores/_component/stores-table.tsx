@@ -48,7 +48,7 @@ const StoresTable = () => {
   ========================= */
 
   const pagination = {
-    totalCount: stores.length || 0,
+    totalItems: stores.length || 0,
     totalPages: Math.ceil((stores.length || 0) / filter.pageSize),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,

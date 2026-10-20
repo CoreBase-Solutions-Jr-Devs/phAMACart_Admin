@@ -11,6 +11,7 @@ import { Mutex } from "async-mutex";
 import { RootState } from "./store";
 import { AUTH_ROUTES } from "@/routes/common/routePath";
 import { parseError } from "@/lib/parse-error";
+import { CLIENT } from "./api-paths";
 
 const mutex = new Mutex();
 
@@ -389,7 +390,7 @@ const baseQueryWithReauth: BaseQueryFn<
     const refreshResult =
       await refreshBaseQuery(
         {
-          url: "/identity/refresh-token",
+          url: `${CLIENT}/identity/refresh-token`,
           method: "POST",
           body: {
             refreshToken,
@@ -584,6 +585,12 @@ export const apiClient =
       "notifications",
       "tenants",
       "users",
+      "roles",
+      "permissions",
+      "audit",
+      "reports",
+      "health",
+      "searchInsights",
     ],
 
     endpoints: () => ({}),

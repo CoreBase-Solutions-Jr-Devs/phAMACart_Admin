@@ -1,4 +1,5 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 
 import {
   DeliverySettings,
@@ -21,7 +22,7 @@ export const deliverySettingsAPI =
         void
       >({
         query: () => ({
-          url: "/delivery-settings",
+          url: `${ADMIN}/delivery-settings`,
           method: "GET",
         }),
 
@@ -34,7 +35,7 @@ export const deliverySettingsAPI =
           UpdateDeliverySettingsRequest
         >({
           query: (body) => ({
-            url: "/delivery-settings",
+            url: `${ADMIN}/delivery-settings`,
             method: "PATCH",
             body,
           }),
@@ -60,7 +61,7 @@ export const deliverySettingsAPI =
             input,
             sessionToken,
           }) => ({
-            url: "/locations/suggestions",
+            url: `${CLIENT}/locations/suggestions`,
             method: "GET",
             params: {
               input,
@@ -93,7 +94,7 @@ export const deliverySettingsAPI =
             placeId,
             sessionToken,
           }) => ({
-            url: "/locations/details",
+            url: `${CLIENT}/locations/details`,
             method: "GET",
             params: {
               placeId,
@@ -147,7 +148,7 @@ export const deliverySettingsAPI =
             latitude,
             longitude,
           }) => ({
-            url: "/locations/current",
+            url: `${CLIENT}/locations/current`,
             method: "GET",
             params: {
               latitude,

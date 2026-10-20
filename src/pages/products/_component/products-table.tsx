@@ -30,7 +30,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, FileSpreadsheet, FolderInput, X } from "lucide-react";
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BulkCategoryDialog } from "./bulk-category-dialog";
+import { ImportDataDialog } from "./import-data-dialog";
 import { toast } from "sonner";
 
 import { Product } from "@/features/products/productsType";
@@ -60,6 +64,9 @@ const ProductsTable = () => {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // ─────────────────────────────────────────────────────────────────────
   // DATA
@@ -88,7 +95,11 @@ const ProductsTable = () => {
   const [triggerSync, { isLoading: isSyncing }] =
     useTriggerProductSyncMutation();
 
-  const products = data?.products.data || [];
+  const products = useMemo(
+    () => (data?.products.data || []).map((p) => ({ ...p, _id: p.id })),
+    [data]
+  );
+  const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
   const leafCategories = leafCategoriesData?.categories || [];
   const brands = brandsData?.brands?.data || [];
 
@@ -111,7 +122,7 @@ const ProductsTable = () => {
   // ─────────────────────────────────────────────────────────────────────
 
   const pagination = {
-    totalCount: data?.products.count || 0,
+    totalItems: data?.products.count || 0,
     totalPages: Math.ceil(
       (data?.products.count || 0) / filter.pageSize
     ),
@@ -174,12 +185,39 @@ const ProductsTable = () => {
   // COLUMNS
   // ─────────────────────────────────────────────────────────────────────
 
-  const columns = useMemo(
-    () =>
-      productsColumns({
+  const columns = useMemo<ColumnDef<Product>[]>(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            aria-label="Select page"
+            checked={
+              table.getIsAllPageRowsSelected()
+                ? true
+                : table.getIsSomePageRowsSelected()
+                  ? "indeterminate"
+                  : false
+            }
+            onCheckedChange={(checked) =>
+              table.toggleAllPageRowsSelected(checked === true)
+            }
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            aria-label="Select product"
+            checked={row.getIsSelected()}
+            onClick={(e) => e.stopPropagation()}
+            onCheckedChange={(checked) => row.toggleSelected(checked === true)}
+          />
+        ),
+      },
+      ...productsColumns({
         onDelete: handleDelete,
         onEdit: handleEdit,
       }),
+    ],
     [products]
   );
 
@@ -205,14 +243,38 @@ const ProductsTable = () => {
       {/* ACTIONS */}
       {/* ─────────────────────────────────────────────────────────────── */}
 
-      <div className="flex w-full items-center justify-between">
-        <Button
-          onClick={handleSyncProducts}
-          disabled={isSyncing}
-          className="shrink-0"
-        >
-          {isSyncing ? "Syncing..." : "Sync Products Now"}
-        </Button>
+      <div className="flex w-full flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={handleSyncProducts}
+            disabled={isSyncing}
+            className="shrink-0"
+          >
+            {isSyncing ? "Syncing..." : "Sync Products Now"}
+          </Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileSpreadsheet className="size-4" />
+            Import descriptions
+          </Button>
+        </div>
+
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-1.5 text-sm">
+            <span className="font-medium">{selectedIds.length} selected</span>
+            <Button size="sm" onClick={() => setBulkOpen(true)}>
+              <FolderInput className="size-4" />
+              Assign category
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setRowSelection({})}
+              aria-label="Clear selection"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ─────────────────────────────────────────────────────────────── */}
@@ -391,7 +453,9 @@ const ProductsTable = () => {
             data={products}
             columns={columns}
             isLoading={isFetching}
-            selection={false}
+            selection={true}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
             showSearch={false}
             emptyTitle="No products found"
             isShowPagination={true}
@@ -405,6 +469,19 @@ const ProductsTable = () => {
       {/* ─────────────────────────────────────────────────────────────── */}
       {/* EDIT DIALOG */}
       {/* ─────────────────────────────────────────────────────────────── */}
+
+      <BulkCategoryDialog
+        open={bulkOpen}
+        productIds={selectedIds}
+        categories={leafCategories}
+        onOpenChange={setBulkOpen}
+        onDone={() => {
+          setBulkOpen(false);
+          setRowSelection({});
+        }}
+      />
+
+      <ImportDataDialog open={importOpen} onOpenChange={setImportOpen} />
 
       <ProductFormDialog
         product={selectedProduct}

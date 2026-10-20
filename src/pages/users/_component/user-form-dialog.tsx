@@ -141,13 +141,10 @@ export const UserFormDialog = ({
       dateOfBirth: toDateInputValue(source.dateOfBirth),
       roleIds: source.roleIds ?? [],
 
-      /*
-       * These fields aren't currently returned by your
-       * GET user response, so retain sensible defaults.
-       */
-      forcePasswordChange: false,
-      accessFromAnyNetwork: false,
-      expiryDate: "",
+      forcePasswordChange: source.forcePasswordChange ?? false,
+      accessFromAnyNetwork: source.accessFromAnyNetwork ?? false,
+      expiryDate: toDateInputValue(source.expiryDate),
+      // Not editable after creation; kept so the shared schema validates.
       emailConfirmationRequired: false,
     });
   };
@@ -212,27 +209,23 @@ export const UserFormDialog = ({
           firstName: data.firstName.trim(),
           lastName: data.lastName.trim(),
 
+          // Omitted fields are left unchanged on the server.
           dateOfBirth: data.dateOfBirth
             ? new Date(data.dateOfBirth).toISOString()
-            : new Date(0).toISOString(),
-
-          /*
-           * Don't change the password during normal
-           * profile editing.
-           */
-          temporaryPassword: "",
+            : undefined,
 
           roleIds: data.roleIds,
 
           forcePasswordChange: data.forcePasswordChange,
           accessFromAnyNetwork: data.accessFromAnyNetwork,
 
-          expiryDate: data.expiryDate
-            ? new Date(data.expiryDate).toISOString()
-            : null,
-
-          emailConfirmationRequired:
-            data.emailConfirmationRequired,
+          // An unchanged expiry date is not re-sent (the server rejects past dates).
+          ...(data.expiryDate
+            ? data.expiryDate !==
+              toDateInputValue(freshUser?.expiryDate ?? user.expiryDate)
+              ? { expiryDate: new Date(`${data.expiryDate}T23:59:59`).toISOString() }
+              : {}
+            : { clearExpiryDate: true }),
         },
       }).unwrap();
 
@@ -440,21 +433,14 @@ export const UserFormDialog = ({
               </span>
             </label>
 
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={watch("emailConfirmationRequired")}
-                onCheckedChange={(checked) =>
-                  setValue(
-                    "emailConfirmationRequired",
-                    checked === true
-                  )
-                }
-              />
-
-              <span className="text-sm">
-                Require email confirmation
-              </span>
-            </label>
+            {freshUser && (
+              <p className="text-xs text-muted-foreground">
+                Email{" "}
+                {freshUser.emailConfirmed ? "confirmed" : "not confirmed yet"}
+                {freshUser.isLockedOut &&
+                  " · locked after failed sign-ins (unlock it from the users list)"}
+              </p>
+            )}
           </div>
 
           {/* =========================

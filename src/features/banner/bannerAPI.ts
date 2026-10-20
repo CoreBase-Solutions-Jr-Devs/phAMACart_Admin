@@ -1,11 +1,12 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 import { Banner } from "./bannerType";
 
 export const BannerApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
     getBanners: builder.query<{ banners: Banner[] }, void>({
       query: () => ({
-        url: "/banners",
+        url: `${CLIENT}/banners`,
         method: "GET",
       }),
       providesTags: ["banners"],
@@ -13,7 +14,7 @@ export const BannerApi = apiClient.injectEndpoints({
 
     getBannerById: builder.query<{ banner: Banner }, string>({
       query: (id) => ({
-        url: `/banners/${id}`,
+        url: `${ADMIN}/banners/${id}`,
         method: "GET",
       }),
       providesTags: ["banners"],
@@ -63,7 +64,7 @@ export const BannerApi = apiClient.injectEndpoints({
         }
 
         return {
-          url: "/banners",
+          url: `${ADMIN}/banners`,
           method: "POST",
           body: formData,
         };
@@ -110,7 +111,7 @@ export const BannerApi = apiClient.injectEndpoints({
         }
 
         return {
-          url: `/banners`,
+          url: `${ADMIN}/banners`,
           method: "PUT",
           body: formData,
         };
@@ -120,7 +121,7 @@ export const BannerApi = apiClient.injectEndpoints({
 
     deleteBanner: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
-        url: `/banners/${id}`,
+        url: `${ADMIN}/banners/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["banners"],

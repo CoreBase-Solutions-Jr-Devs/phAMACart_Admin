@@ -23,7 +23,7 @@ const BrandsTable = () => {
      PAGINATION
   ========================= */
   const pagination = {
-    totalCount: data?.brands?.count || 0,
+    totalItems: data?.brands?.count || 0,
     totalPages: Math.ceil((data?.brands?.count || 0) / filter.pageSize),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,

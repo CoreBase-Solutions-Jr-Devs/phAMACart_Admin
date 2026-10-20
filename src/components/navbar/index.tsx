@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader } from "../ui/sheet";
 import { UserNav } from "./user-nav";
 import { useAppDispatch, useTypedSelector } from "@/app/hook";
 import { logout } from "@/features/auth/authSlice";
+import { useSignOutMutation } from "@/features/auth/authAPI";
 import { useTheme } from "@/context/theme-provider";
 import NotificationBell from "../notifications/notification-bell";
 import { NAV_ROUTES } from "@/routes/nav-routes";
@@ -20,9 +21,17 @@ const Navbar = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const dispatch = useAppDispatch();
+  const [signOut] = useSignOutMutation();
 
   const handleLogout = async () => {
-    dispatch(logout());
+    // Revoke the server-side session first; sign out locally regardless.
+    try {
+      await signOut().unwrap();
+    } catch {
+      // Expired/invalid token: nothing left to revoke.
+    } finally {
+      dispatch(logout());
+    }
   };
 
   const handleOpen = () => {

@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import {
   useSearchUsersQuery,
   useDeleteUserMutation,
+  useSetUserStatusMutation,
+  useUnlockUserMutation,
 } from "@/features/users/usersAPI";
 
 import { User } from "@/features/users/usersType";
@@ -71,7 +73,7 @@ const UsersTable = () => {
     data?.users?.count ?? 0;
 
   const pagination = {
-    totalCount,
+    totalItems: totalCount,
     totalPages: Math.ceil(
       totalCount / filter.pageSize
     ),
@@ -169,12 +171,47 @@ const UsersTable = () => {
   };
 
   /* =========================
+     STATUS / UNLOCK
+  ========================= */
+
+  const [setUserStatus] = useSetUserStatusMutation();
+  const [unlockUser] = useUnlockUserMutation();
+
+  const handleToggleStatus = async (user: User) => {
+    try {
+      await setUserStatus({
+        id: user.id,
+        reactivate: !user.isActive,
+      }).unwrap();
+
+      toast.success(
+        user.isActive
+          ? `${user.userName} deactivated. They can no longer sign in.`
+          : `${user.userName} reactivated.`
+      );
+    } catch (err) {
+      toast.error(parseError(err));
+    }
+  };
+
+  const handleUnlock = async (user: User) => {
+    try {
+      await unlockUser(user.id).unwrap();
+      toast.success(`${user.userName} unlocked.`);
+    } catch (err) {
+      toast.error(parseError(err));
+    }
+  };
+
+  /* =========================
      COLUMNS
   ========================= */
 
   const columns = userColumns({
     onEdit: handleEdit,
     onDelete: handleDelete,
+    onToggleStatus: handleToggleStatus,
+    onUnlock: handleUnlock,
   });
 
   return (
@@ -253,9 +290,11 @@ const UsersTable = () => {
             </DialogTitle>
 
             <DialogDescription>
-              Are you sure you want to
-              delete this user? This
-              action cannot be undone.
+              This permanently removes the
+              account and signs it out. Order
+              and prescription history is kept.
+              To block access temporarily, use
+              Deactivate instead.
             </DialogDescription>
           </DialogHeader>
 

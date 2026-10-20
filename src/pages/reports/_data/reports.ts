@@ -13,7 +13,8 @@ export const reportsData: Report[] = [
       "Summary of sales across orders, products, customers, payment methods, and reporting periods.",
     cadence: "Updated daily",
     icon: "CreditCard",
-    available: false,
+    available: true,
+    href: "/reports/sales-report",
   },
 
   {
@@ -21,10 +22,11 @@ export const reportsData: Report[] = [
     title: "Transactions",
     category: "Financial",
     description:
-      "Detailed financial transactions including invoices, payments, refunds, payment methods, and transaction status.",
+      "Every M-Pesa payment attempt with amount, M-Pesa receipt, result and anything that needs finance review.",
     cadence: "Updated daily",
     icon: "FileText",
-    available: false,
+    available: true,
+    href: "/reports/transactions",
   },
 
   {
@@ -35,7 +37,8 @@ export const reportsData: Report[] = [
       "Payment activity across orders showing payment methods, amounts, successful payments, failed payments, and outstanding balances.",
     cadence: "Updated daily",
     icon: "CreditCard",
-    available: false,
+    available: true,
+    href: "/reports/payment-report",
   },
 
   {
@@ -57,7 +60,8 @@ export const reportsData: Report[] = [
       "Aggregated revenue by date, product category, payment method, and sales channel with period-over-period comparisons.",
     cadence: "Updated daily",
     icon: "PieChart",
-    available: false,
+    available: true,
+    href: "/reports/revenue-summary",
   },
 
   {
@@ -79,7 +83,8 @@ export const reportsData: Report[] = [
       "Taxable sales and tax amounts summarized by product, transaction, and reporting period.",
     cadence: "Monthly",
     icon: "FileText",
-    available: false,
+    available: true,
+    href: "/reports/tax-report",
   },
 
   // ============================================================
@@ -91,10 +96,11 @@ export const reportsData: Report[] = [
     title: "Inventory Report",
     category: "Inventory",
     description:
-      "Current inventory position showing products, available stock, reserved stock, reorder levels, and stock value.",
+      "Current stock per product: on hand, reserved, available and stock value at selling price.",
     cadence: "Real-time",
     icon: "ClipboardList",
-    available: false,
+    available: true,
+    href: "/reports/inventory-report",
   },
 
   {
@@ -116,7 +122,8 @@ export const reportsData: Report[] = [
       "Products approaching or below their configured reorder levels to support timely replenishment.",
     cadence: "Real-time",
     icon: "Clock",
-    available: false,
+    available: true,
+    href: "/reports/low-stock",
   },
 
   {
@@ -127,7 +134,8 @@ export const reportsData: Report[] = [
       "Product-level performance showing units sold, revenue generated, stock movement, and contribution to overall sales.",
     cadence: "Updated daily",
     icon: "PieChart",
-    available: false,
+    available: true,
+    href: "/reports/product-performance",
   },
 
   {
@@ -153,7 +161,8 @@ export const reportsData: Report[] = [
       "Customer purchasing activity showing order history, total spend, average order value, and purchase frequency.",
     cadence: "Updated daily",
     icon: "CreditCard",
-    available: false,
+    available: true,
+    href: "/reports/customer-sales",
   },
 
   {
@@ -161,10 +170,11 @@ export const reportsData: Report[] = [
     title: "Customer Report",
     category: "Customers",
     description:
-      "Customer overview including account activity, orders, payments, prescriptions, and purchasing history.",
+      "Customers who registered in the period: contact details, email confirmation, phAMACore sync and last sign-in.",
     cadence: "Updated daily",
     icon: "ClipboardList",
-    available: false,
+    available: true,
+    href: "/reports/customer-report",
   },
 
   {
@@ -175,7 +185,8 @@ export const reportsData: Report[] = [
       "Order activity by customer including order count, order value, status, payment status, and delivery status.",
     cadence: "Updated daily",
     icon: "FileText",
-    available: false,
+    available: true,
+    href: "/reports/customer-orders",
   },
 
   // ============================================================
@@ -190,7 +201,8 @@ export const reportsData: Report[] = [
       "Comprehensive order report showing orders, order values, customers, payment status, fulfillment status, and delivery status.",
     cadence: "Updated daily",
     icon: "ClipboardList",
-    available: false,
+    available: true,
+    href: "/reports/orders-report",
   },
 
   {
@@ -201,7 +213,8 @@ export const reportsData: Report[] = [
       "Order pipeline showing pending, confirmed, processing, dispatched, delivered, cancelled, and completed orders.",
     cadence: "Real-time",
     icon: "Clock",
-    available: false,
+    available: true,
+    href: "/reports/order-status",
   },
 
   {
@@ -209,10 +222,11 @@ export const reportsData: Report[] = [
     title: "Checkout Report",
     category: "Orders",
     description:
-      "Checkout activity showing completed, abandoned, cancelled, and failed checkout sessions.",
+      "How far checkouts got — reserved, awaiting payment, paid, fulfilled — with the most common failure reasons.",
     cadence: "Updated daily",
     icon: "CreditCard",
-    available: false,
+    available: true,
+    href: "/reports/checkout-report",
   },
 
   // ============================================================
@@ -227,7 +241,8 @@ export const reportsData: Report[] = [
       "Prescription activity including submitted, reviewed, approved, rejected, and fulfilled prescriptions.",
     cadence: "Updated daily",
     icon: "FileText",
-    available: false,
+    available: true,
+    href: "/reports/prescription-report",
   },
 
   {
@@ -238,7 +253,8 @@ export const reportsData: Report[] = [
       "Tracks prescription workflow from submission and review through approval, dispensing, and order fulfillment.",
     cadence: "Real-time",
     icon: "ClipboardList",
-    available: false,
+    available: true,
+    href: "/reports/prescription-status",
   },
 
   {
@@ -249,7 +265,8 @@ export const reportsData: Report[] = [
       "Delivery performance showing dispatched orders, completed deliveries, failed deliveries, delivery times, and delivery status.",
     cadence: "Updated daily",
     icon: "Building2",
-    available: false,
+    available: true,
+    href: "/reports/delivery-report",
   },
 
   {
@@ -260,6 +277,7 @@ export const reportsData: Report[] = [
       "Delivery performance analysis including fulfillment time, delivery completion rate, failed deliveries, and turnaround time.",
     cadence: "Updated daily",
     icon: "Clock",
-    available: false,
+    available: true,
+    href: "/reports/delivery-performance",
   },
 ];

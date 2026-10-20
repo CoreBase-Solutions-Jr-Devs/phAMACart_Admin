@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { Bell } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { RootState } from "@/app/store";
 
@@ -11,8 +12,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import NotificationDropdown from "./notification-dropdown";
+import { useGetNotificationsQuery } from "@/features/notifications/notificationAPI";
+import { notificationsLoaded } from "@/features/notifications/notificationSlice";
 
 const NotificationBell = () => {
+  const dispatch = useDispatch();
+
+  // History (back-office feed); live ones arrive over SignalR and are merged in.
+  const { data } = useGetNotificationsQuery(undefined, {
+    pollingInterval: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (data?.data) {
+      dispatch(notificationsLoaded(data.data));
+    }
+  }, [data, dispatch]);
+
   const unreadCount = useSelector(
     (state: RootState) =>
       state.notifications.notifications.filter(

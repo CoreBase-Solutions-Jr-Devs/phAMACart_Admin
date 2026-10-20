@@ -17,9 +17,8 @@ import {
 } from "@/components/ui/chart";
 import OrderFulfillmentRate from "./order-fulfillment-rate";
 import { cn } from "@/lib/utils";
-
-// ── No Data Yet ─────────────────────────────────────────────────────────────
-const chartData: any[] = []; // replace later with API data
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOverviewStats } from "@/hooks/use-overview-stats";
 
 const CHART_TYPES = {
   orders: {
@@ -50,7 +49,8 @@ export function OverviewChart() {
   const [activeChart, setActiveChart] =
     React.useState<keyof typeof CHART_TYPES>("orders");
 
-  const isEmpty = chartData.length === 0;
+  const { chart: chartData, fulfilment, hasData, isLoading } = useOverviewStats();
+  const isEmpty = !hasData;
 
   const totals = {
     orders: chartData.reduce(
@@ -73,7 +73,7 @@ export function OverviewChart() {
           </CardTitle>
 
           <CardDescription className="mt-0.5 text-xs">
-            Overview of orders and revenue
+            Orders and paid revenue, last 30 days
           </CardDescription>
         </div>
 
@@ -114,7 +114,9 @@ export function OverviewChart() {
 
       {/* Body */}
       <CardContent className="px-5 py-5">
-        {isEmpty ? (
+        {isLoading ? (
+          <Skeleton className="h-[240px] w-full" />
+        ) : isEmpty ? (
           <div className="flex min-h-[170px] flex-col items-center justify-center text-center">
             <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-muted">
               <span className="text-sm text-muted-foreground">↗</span>
@@ -174,10 +176,10 @@ export function OverviewChart() {
         {!isEmpty && (
           <div className="mt-5 border-t pt-5">
             <OrderFulfillmentRate
-              completed={120}
-              pending={40}
-              cancelled={15}
-              total={175}
+              completed={fulfilment.completed}
+              pending={fulfilment.pending}
+              cancelled={fulfilment.cancelled}
+              total={fulfilment.total}
             />
           </div>
         )}

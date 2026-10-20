@@ -39,7 +39,7 @@ const BannersTable = () => {
      PAGINATION
   ========================= */
   const pagination = {
-    totalCount: banners.length,
+    totalItems: banners.length,
     totalPages: Math.ceil(banners.length / filter.pageSize),
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,

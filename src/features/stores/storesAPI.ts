@@ -1,11 +1,12 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 import { Stores } from "./storesType";
 
 export const brandsApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
     getStores: builder.query<{ stores: Stores[] }, void>({
       query: () => ({
-        url: "/stores",
+        url: `${CLIENT}/stores`,
         method: "GET",
       }),
       providesTags: ["stores"],
@@ -68,7 +69,7 @@ export const brandsApi = apiClient.injectEndpoints({
         };
 
         return {
-          url: "/stores",
+          url: `${ADMIN}/stores`,
           method: "PUT",
           body: { store },
         };

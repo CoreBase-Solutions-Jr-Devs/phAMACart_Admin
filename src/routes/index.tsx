@@ -3,7 +3,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import {
   authenticationRoutePaths,
   protectedRoutePaths,
+  adminRoutePaths,
   devSupportRoutePaths,
+  ADMIN_ROLES,
 } from "./common/routes";
 
 import AppLayout from "@/layouts/app-layout";
@@ -36,6 +38,19 @@ function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             {protectedRoutePaths.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={route.element}
+              />
+            ))}
+          </Route>
+        </Route>
+
+        {/* Back-office admin routes */}
+        <Route element={<ProtectedRoute allowedRoles={ADMIN_ROLES} />}>
+          <Route element={<AppLayout />}>
+            {adminRoutePaths.map((route) => (
               <Route
                 key={route.path}
                 path={route.path}

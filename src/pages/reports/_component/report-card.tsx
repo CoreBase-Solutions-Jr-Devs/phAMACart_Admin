@@ -7,6 +7,7 @@ import {
   Building2,
   ArrowRight,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   Report,
@@ -70,8 +71,8 @@ const ReportCard = ({
 
       <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
         {report.available ? (
-          <a
-            href={report.href}
+          <Link
+            to={report.href ?? "#"}
             className={cn(
               "flex items-center gap-1.5 text-sm font-medium",
               "text-primary transition-colors",
@@ -85,7 +86,7 @@ const ReportCard = ({
                 "group-hover:translate-x-0.5",
               )}
             />
-          </a>
+          </Link>
         ) : (
           <span className="rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
             Coming Soon

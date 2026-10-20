@@ -1,15 +1,13 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN } from "@/app/api-paths";
 
 import {
   GetPendingPrescriptionsParams,
   GetPendingPrescriptionsResponse,
-  GetPrescriptionByIdResponse,
   ApprovePrescriptionRequest,
   ApprovePrescriptionResponse,
   RejectPrescriptionRequest,
   RejectPrescriptionResponse,
-  SearchPrescriptionProductsParams,
-  SearchPrescriptionProductsResponse,
   TranscribePrescriptionDetailsRequest,
   TranscribePrescriptionDetailsResponse,
 } from "./prescriptionsType";
@@ -21,7 +19,7 @@ export const prescriptionsApi = apiClient.injectEndpoints({
       GetPendingPrescriptionsParams | void
     >({
       query: (params) => ({
-        url: "/admin/prescriptions/pending",
+        url: `${ADMIN}/admin/prescriptions/pending`,
         method: "GET",
         params: {
           pageNumber: params?.pageNumber ?? 1,
@@ -32,42 +30,12 @@ export const prescriptionsApi = apiClient.injectEndpoints({
       providesTags: ["prescriptions"],
     }),
 
-    getPrescriptionById: builder.query<
-      GetPrescriptionByIdResponse,
-      string
-    >({
-      query: (id) => ({
-        url: `/prescriptions/${id}`,
-        method: "GET",
-      }),
-
-      providesTags: (_result, _error, id) => [
-        {
-          type: "prescriptions",
-          id,
-        },
-      ],
-    }),
-
-    searchPrescriptionProducts: builder.query<
-      SearchPrescriptionProductsResponse,
-      SearchPrescriptionProductsParams
-    >({
-      query: (params) => ({
-        url: "/admin/prescriptions/products/search",
-        method: "GET",
-        params: {
-          query: params.query,
-        },
-      }),
-    }),
-
     transcribePrescriptionDetails: builder.mutation<
       TranscribePrescriptionDetailsResponse,
       TranscribePrescriptionDetailsRequest
     >({
       query: (body) => ({
-        url: "/admin/prescriptions/transcribe",
+        url: `${ADMIN}/admin/prescriptions/transcribe`,
         method: "POST",
         body,
       }),
@@ -83,7 +51,7 @@ export const prescriptionsApi = apiClient.injectEndpoints({
       ApprovePrescriptionRequest
     >({
       query: (body) => ({
-        url: "/admin/prescriptions/approve",
+        url: `${ADMIN}/admin/prescriptions/approve`,
         method: "POST",
         body,
       }),
@@ -96,7 +64,7 @@ export const prescriptionsApi = apiClient.injectEndpoints({
       RejectPrescriptionRequest
     >({
       query: (body) => ({
-        url: "/admin/prescriptions/reject",
+        url: `${ADMIN}/admin/prescriptions/reject`,
         method: "POST",
         body,
       }),
@@ -108,9 +76,6 @@ export const prescriptionsApi = apiClient.injectEndpoints({
 
 export const {
   useGetPendingPrescriptionsQuery,
-  useGetPrescriptionByIdQuery,
-  useSearchPrescriptionProductsQuery,
-  useLazySearchPrescriptionProductsQuery,
   useTranscribePrescriptionDetailsMutation,
   useApprovePrescriptionMutation,
   useRejectPrescriptionMutation,

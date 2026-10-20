@@ -1,4 +1,5 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 import {
   GetCategoriesParams,
   GetCategoriesFlatResponse,
@@ -17,7 +18,7 @@ export const categoriesApi = apiClient.injectEndpoints({
       GetCategoriesParams | void
     >({
       query: (params) => ({
-        url: "/categories",
+        url: `${CLIENT}/categories`,
         method: "GET",
         params: params ?? {},
       }),
@@ -29,7 +30,7 @@ export const categoriesApi = apiClient.injectEndpoints({
      */
     getLeafCategories: builder.query<{ categories: Category[] }, void>({
       query: () => ({
-        url: "/categories/leaf",
+        url: `${CLIENT}/categories/leaf`,
         method: "GET",
       }),
       providesTags: ["categories"],
@@ -40,7 +41,7 @@ export const categoriesApi = apiClient.injectEndpoints({
      */
     getCategoriesTree: builder.query<GetCategoriesTreeResponse, void>({
       query: () => ({
-        url: "/categories/hierarchy",
+        url: `${CLIENT}/categories/hierarchy`,
         method: "GET",
       }),
       providesTags: ["categories"],
@@ -48,7 +49,7 @@ export const categoriesApi = apiClient.injectEndpoints({
 
     getCategoryById: builder.query<GetCategoryByIdResponse, string>({
       query: (id) => ({
-        url: `/categories/${id}`,
+        url: `${ADMIN}/categories/${id}`,
         method: "GET",
       }),
       providesTags: (_result, _error, id) => [{ type: "categories", id }],
@@ -67,7 +68,7 @@ export const categoriesApi = apiClient.injectEndpoints({
       }
     >({
       query: (data) => ({
-        url: "/categories",
+        url: `${ADMIN}/categories`,
         method: "POST",
         body: data,
       }),
@@ -87,7 +88,7 @@ export const categoriesApi = apiClient.injectEndpoints({
       }
     >({
       query: ({ id, name, description, parentCategoryId }) => ({
-        url: "/categories",
+        url: `${ADMIN}/categories`,
         method: "PUT",
         body: { category: { id, name, description, parentCategoryId } },
       }),
@@ -99,7 +100,7 @@ export const categoriesApi = apiClient.injectEndpoints({
      */
     deleteCategory: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
-        url: `/categories/${id}`,
+        url: `${ADMIN}/categories/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["categories"],

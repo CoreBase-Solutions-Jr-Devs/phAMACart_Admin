@@ -87,7 +87,7 @@ const CategoriesTable = () => {
   ========================= */
 
   const pagination = {
-    totalCount: categories.length,
+    totalItems: categories.length,
     totalPages: Math.ceil(
       categories.length / filter.pageSize,
     ),

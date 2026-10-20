@@ -1,4 +1,5 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 import { Brand } from "./brandsType";
 
 /* =========================
@@ -55,7 +56,7 @@ export const brandsApi = apiClient.injectEndpoints({
     ========================= */
     getBrands: builder.query<GetBrandsResponse, GetBrandsParams>({
       query: (params) => ({
-        url: "/brands",
+        url: `${CLIENT}/brands`,
         method: "GET",
         params,
       }),
@@ -78,7 +79,7 @@ export const brandsApi = apiClient.injectEndpoints({
         formData.append("brandImageFile", brandImageFile);
 
         return {
-          url: "/brands",
+          url: `${ADMIN}/brands`,
           method: "POST",
           body: formData,
         };
@@ -120,7 +121,7 @@ export const brandsApi = apiClient.injectEndpoints({
         }
 
         return {
-          url: "/brands",
+          url: `${ADMIN}/brands`,
           method: "PUT",
           body: formData,
         };
@@ -131,20 +132,6 @@ export const brandsApi = apiClient.injectEndpoints({
       invalidatesTags: ["brands"],
     }),
 
-    /* =========================
-       DELETE
-    ========================= */
-    deleteBrand: builder.mutation<
-      { success: boolean },
-      string
-    >({
-      query: (id) => ({
-        url: `/brands/${id}`,
-        method: "DELETE",
-      }),
-
-      invalidatesTags: ["brands"],
-    }),
   }),
 });
 
@@ -203,5 +190,4 @@ export const {
   useGetBrandsQuery,
   useCreateBrandMutation,
   useUpdateBrandMutation,
-  useDeleteBrandMutation,
 } = brandsApi;

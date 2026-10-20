@@ -1,11 +1,12 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 import { Product, GetProductsResponse, GetProductsParams, TriggerProductSyncResponse, UpdateProductPayload } from "./productsType";
 
 export const productsApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<GetProductsResponse, GetProductsParams>({
       query: (params) => ({
-        url: "/products",
+        url: `${CLIENT}/products`,
         method: "GET",
         params,
       }),
@@ -14,9 +15,40 @@ export const productsApi = apiClient.injectEndpoints({
 
     triggerProductSync: builder.mutation<TriggerProductSyncResponse, void>({
       query: () => ({
-        url: "/products-sync/immediate",
+        url: `${ADMIN}/products-sync/immediate`,
         method: "POST",
       }),
+      invalidatesTags: ["products"],
+    }),
+
+    /** Moves the selected products into one leaf category. */
+    bulkAssignCategory: builder.mutation<
+      { requestedCount: number; updatedCount: number; missingProductIds: string[] },
+      { productIds: string[]; categoryId: string }
+    >({
+      query: (body) => ({
+        url: `${ADMIN}/products/category`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["products"],
+    }),
+
+    /** Fills product descriptions from an Excel file (multipart field "file"). */
+    importProductData: builder.mutation<
+      { totalRows: number; updated: number; notFound: number; alreadyHadDescription: number },
+      File
+    >({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return {
+          url: `${ADMIN}/products/import-data`,
+          method: "POST",
+          body: formData,
+        };
+      },
       invalidatesTags: ["products"],
     }),
 
@@ -40,7 +72,7 @@ export const productsApi = apiClient.injectEndpoints({
         }
 
         return {
-          url: "/products",
+          url: `${ADMIN}/products`,
           method: "PUT",
           body: formData,
         };
@@ -93,7 +125,7 @@ export const productsApi = apiClient.injectEndpoints({
 
     deleteProduct: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
-        url: `/products/${id}`,
+        url: `${ADMIN}/products/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["products"],
@@ -106,5 +138,7 @@ export const {
   useLazyGetProductsQuery,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useTriggerProductSyncMutation, 
+  useTriggerProductSyncMutation,
+  useBulkAssignCategoryMutation,
+  useImportProductDataMutation, 
 } = productsApi;

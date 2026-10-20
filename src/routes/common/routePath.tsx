@@ -9,6 +9,14 @@ export const AUTH_ROUTES = {
 
 export const PROTECTED_ROUTES = {
   OVERVIEW: "/overview",
+  ORDERS: "/orders",
+  REPORT_VIEW: "/reports/:reportId",
+  SEARCH_INSIGHTS: "/search-insights",
+  INTEGRATIONS: "/integrations",
+  ACCESS: "/roles",
+  AUDIT_LOGS: "/audit-logs",
+  SYSTEM_HEALTH: "/system-health",
+  TENANTS: "/tenants",
   COMPANYPROFILE: "/company-profile",
   PRODUCTS: "/products",
   PRESCRIPTIONS: "/prescriptions",

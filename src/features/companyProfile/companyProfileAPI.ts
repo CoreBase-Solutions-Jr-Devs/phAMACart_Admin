@@ -1,4 +1,5 @@
 import { apiClient } from "@/app/api-client";
+import { ADMIN, CLIENT } from "@/app/api-paths";
 import { CompanyProfile } from "./companyProfileType";
 
 export const companyProfileApi = apiClient.injectEndpoints({
@@ -8,7 +9,7 @@ export const companyProfileApi = apiClient.injectEndpoints({
     ========================= */
     getCompanyProfile: builder.query<CompanyProfile, void>({
       query: () => ({
-        url: "/company-profile",
+        url: `${CLIENT}/company-profile`,
         method: "GET",
       }),
 
@@ -120,7 +121,7 @@ export const companyProfileApi = apiClient.injectEndpoints({
         }
 
         return {
-          url: "/company-profile",
+          url: `${ADMIN}/company-profile`,
           method: "PUT",
           body: formData,
         };

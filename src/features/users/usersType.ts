@@ -13,6 +13,24 @@ export interface CreateUserRequest {
   emailConfirmationRequired: boolean;
 }
 
+/**
+ * Admin update. Omitted fields are left unchanged; roleIds, when sent,
+ * replace the user's roles (and sign them out everywhere).
+ */
+export interface UpdateUserRequest {
+  userName?: string;
+  email?: string;
+  phoneNumber?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string | null;
+  roleIds?: string[];
+  forcePasswordChange?: boolean;
+  accessFromAnyNetwork?: boolean;
+  expiryDate?: string | null;
+  clearExpiryDate?: boolean;
+}
+
 export interface User {
   id: string;
   userName: string;
@@ -37,6 +55,13 @@ export interface User {
   roles: string[];
 
   isActive: boolean;
+
+  /* Detail-only (GET /identity/users/{id}) */
+  forcePasswordChange?: boolean;
+  accessFromAnyNetwork?: boolean;
+  expiryDate?: string | null;
+  emailConfirmed?: boolean;
+  isLockedOut?: boolean;
 }
 
 export interface CreateUserResponse {

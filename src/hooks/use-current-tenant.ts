@@ -1,14 +1,12 @@
 import { useEffect } from "react";
 
-import {
-  useGetTenantsQuery,
-  type TenantConfig,
-} from "@/features/tenants/tenantsAPI";
+import { useResolveTenantQuery } from "@/features/tenants/tenantsAPI";
 import { useAppDispatch, useTypedSelector } from "@/app/hook";
 import { setTenant, clearTenant } from "@/features/tenants/tenantsSlice";
 
 const useCurrentTenant = () => {
   const dispatch = useAppDispatch();
+  const host = window.location.host.toLowerCase();
 
   const currentTenant = useTypedSelector(
     (state) => state.tenant.currentTenant,
@@ -20,36 +18,20 @@ const useCurrentTenant = () => {
     isFetching,
     isError,
     error,
-  } = useGetTenantsQuery();
+  } = useResolveTenantQuery(host);
 
   useEffect(() => {
-    if (isLoading || isFetching || !data?.data) {
+    if (isLoading || isFetching) {
       return;
     }
 
-    const host = window.location.host.toLowerCase();
-
-    const tenant = data.data.find(
-      (item: TenantConfig) =>
-        item.clientHost?.toLowerCase() === host ||
-        item.adminHost?.toLowerCase() === host,
-    );
-
-    if (tenant) {
-      dispatch(setTenant(tenant));
-    } else {
+    if (data) {
+      dispatch(setTenant(data));
+    } else if (isError) {
       dispatch(clearTenant());
-
-      console.error(
-        `No tenant configured for host: ${host}`,
-      );
+      console.error(`No tenant configured for host: ${host}`);
     }
-  }, [
-    data,
-    isLoading,
-    isFetching,
-    dispatch,
-  ]);
+  }, [data, isLoading, isFetching, isError, host, dispatch]);
 
   return {
     tenant: currentTenant,
