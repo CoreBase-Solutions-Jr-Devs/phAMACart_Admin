@@ -53,3 +53,18 @@ export const hasRole = (userRoles: string[], roles: string[]): boolean => {
   const normalized = userRoles.map((r) => r.trim().toLowerCase());
   return roles.some((r) => normalized.includes(r.trim().toLowerCase()));
 };
+
+/**
+ * Mirrors PlatformRoles.CanGrant on the API: which roles this user may give or take away.
+ * Dev: any. SuperAdmin: any except Dev. Admin: any except SuperAdmin and Dev.
+ */
+export const canGrantRole = (userRoles: string[], role: string): boolean => {
+  const r = role.trim().toLowerCase();
+  if (hasRole(userRoles, [PLATFORM_ROLES.DEV])) return true;
+  if (r === "dev") return false;
+  if (hasRole(userRoles, [PLATFORM_ROLES.SUPER_ADMIN])) return true;
+  return hasRole(userRoles, [PLATFORM_ROLES.ADMIN]) && r !== "superadmin";
+};
+
+/** Every role except the customer role counts as a staff role. */
+export const isStaffRole = (role: string) => role.trim().toLowerCase() !== "user";

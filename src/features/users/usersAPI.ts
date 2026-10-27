@@ -9,6 +9,10 @@ import {
   User,
   UserSearchRequest,
   RoleSearchRequest,
+  SessionSearchRequest,
+  StaffChangeResult,
+  StaffMember,
+  UserSession,
 } from "./usersType";
 
 export const usersAPI = apiClient.injectEndpoints({
@@ -118,6 +122,69 @@ export const usersAPI = apiClient.injectEndpoints({
         },
       }),
     }),
+
+    /* ---------- Staff (promote / demote) ---------- */
+
+    getStaff: builder.query<StaffMember[], void>({
+      query: () => `${ADMIN}/identity/staff`,
+      providesTags: ["users"],
+    }),
+
+    promoteUser: builder.mutation<StaffChangeResult, { id: string; role: string }>({
+      query: ({ id, role }) => ({
+        url: `${ADMIN}/identity/users/${id}/promote`,
+        method: "POST",
+        body: { role },
+      }),
+      invalidatesTags: ["users", "sessions"],
+    }),
+
+    demoteUser: builder.mutation<StaffChangeResult, string>({
+      query: (id) => ({
+        url: `${ADMIN}/identity/users/${id}/demote`,
+        method: "POST",
+      }),
+      invalidatesTags: ["users", "sessions"],
+    }),
+
+    /* ---------- Sessions ---------- */
+
+    searchSessions: builder.query<PaginatedResult<UserSession>, SessionSearchRequest>({
+      query: ({ searchTerm, activeOnly = true, pageIndex = 0, pageSize = 20 }) => ({
+        url: `${ADMIN}/identity/sessions`,
+        params: {
+          SearchTerm: searchTerm || undefined,
+          ActiveOnly: activeOnly,
+          PageIndex: pageIndex,
+          PageSize: pageSize,
+        },
+      }),
+      providesTags: ["sessions"],
+    }),
+
+    getUserSessions: builder.query<UserSession[], { userId: string; activeOnly?: boolean }>({
+      query: ({ userId, activeOnly }) => ({
+        url: `${ADMIN}/identity/users/${userId}/sessions`,
+        params: { activeOnly: activeOnly || undefined },
+      }),
+      providesTags: ["sessions"],
+    }),
+
+    revokeSession: builder.mutation<{ revoked: number }, string>({
+      query: (sessionId) => ({
+        url: `${ADMIN}/identity/sessions/${sessionId}/revoke`,
+        method: "POST",
+      }),
+      invalidatesTags: ["sessions"],
+    }),
+
+    revokeAllUserSessions: builder.mutation<{ revoked: number }, string>({
+      query: (userId) => ({
+        url: `${ADMIN}/identity/users/${userId}/sessions/revoke-all`,
+        method: "POST",
+      }),
+      invalidatesTags: ["sessions"],
+    }),
   }),
 });
 
@@ -130,4 +197,11 @@ export const {
   useSetUserStatusMutation,
   useUnlockUserMutation,
   useGetRolesQuery,
+  useGetStaffQuery,
+  usePromoteUserMutation,
+  useDemoteUserMutation,
+  useSearchSessionsQuery,
+  useGetUserSessionsQuery,
+  useRevokeSessionMutation,
+  useRevokeAllUserSessionsMutation,
 } = usersAPI;
