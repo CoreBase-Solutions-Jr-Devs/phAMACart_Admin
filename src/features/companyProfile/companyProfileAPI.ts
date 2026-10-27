@@ -30,6 +30,7 @@ export const companyProfileApi = apiClient.injectEndpoints({
         id: string;
         name?: string;
         chatLink?: string;
+        pharmacyLicenseNumber?: string | null;
 
         phones?: CompanyProfile["phones"];
         emails?: CompanyProfile["emails"];
@@ -43,6 +44,7 @@ export const companyProfileApi = apiClient.injectEndpoints({
         id,
         name,
         chatLink,
+        pharmacyLicenseNumber,
         phones,
         emails,
         addresses,
@@ -61,50 +63,23 @@ export const companyProfileApi = apiClient.injectEndpoints({
         };
 
         /*
-         * Basic profile information.
-         *
-         * Keep this as JSON because the existing backend
-         * endpoint already expects the profile object here.
+         * The API reads the whole profile (except files) from the
+         * "profile" JSON field. Contact details sent as separate form
+         * fields were ignored, and the chat link was cleared on save.
          */
         append(
           "profile",
           JSON.stringify({
             id,
             name,
+            chatLink: chatLink || null,
+            pharmacyLicenseNumber:
+              pharmacyLicenseNumber === undefined ? undefined : pharmacyLicenseNumber ?? "",
+            phones: phones ?? [],
+            emails: emails ?? [],
+            addresses,
           }),
         );
-
-        append("chatLink", chatLink);
-
-        /*
-         * Contact information
-         */
-        if (phones !== undefined) {
-          formData.append(
-            "phones",
-            JSON.stringify(phones),
-          );
-        }
-
-        if (emails !== undefined) {
-          formData.append(
-            "emails",
-            JSON.stringify(emails),
-          );
-        }
-
-        /*
-         * Company addresses
-         *
-         * This now contains both manually entered addresses
-         * and addresses resolved from the current location.
-         */
-        if (addresses !== undefined) {
-          formData.append(
-            "addresses",
-            JSON.stringify(addresses),
-          );
-        }
 
         /*
          * Files

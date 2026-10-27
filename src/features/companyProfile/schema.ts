@@ -50,6 +50,13 @@ export const companyProfileSchema = z
     logoUrl: urlLike,
     chatLink: urlLike,
 
+    pharmacyLicenseNumber: z
+      .string()
+      .max(50, "Licence number can't be longer than 50 characters")
+      .regex(/^([A-Za-z0-9][A-Za-z0-9 ./-]*)?$/, "Use letters, digits, spaces, '.', '/' or '-'")
+      .nullable()
+      .optional(),
+
     phones: z
       .array(phoneSchema)
       .max(2, "Maximum 2 phones allowed")
