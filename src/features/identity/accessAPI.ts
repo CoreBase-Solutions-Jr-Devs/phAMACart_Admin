@@ -2,6 +2,7 @@ import { apiClient } from "@/app/api-client";
 import { ADMIN } from "@/app/api-paths";
 import type {
   ModulePermissions,
+  MyPermissions,
   PaginatedResult,
   RoleDetail,
   RoleSummary,
@@ -9,9 +10,15 @@ import type {
   UpsertRoleRequest,
 } from "./accessType";
 
-/** Roles & permissions (Identity, SuperAdminOnly). */
+/** Roles & permissions (Identity). */
 export const accessApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
+    /** What the signed-in user may do in this tenant (drives nav and buttons). */
+    getMyPermissions: builder.query<MyPermissions, void>({
+      query: () => `${ADMIN}/identity/me/permissions`,
+      providesTags: ["myPermissions"],
+    }),
+
     getRoleList: builder.query<
       PaginatedResult<RoleSummary>,
       { searchTerm?: string; pageIndex?: number; pageSize?: number } | void
@@ -38,7 +45,7 @@ export const accessApi = apiClient.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["roles"],
+      invalidatesTags: ["roles", "myPermissions"],
     }),
 
     updateRole: builder.mutation<string, { roleId: string; body: UpsertRoleRequest }>({
@@ -47,7 +54,7 @@ export const accessApi = apiClient.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["roles"],
+      invalidatesTags: ["roles", "myPermissions"],
     }),
 
     assignRolePermissions: builder.mutation<string, { roleId: string; permissionIds: string[] }>({
@@ -56,7 +63,7 @@ export const accessApi = apiClient.injectEndpoints({
         method: "PUT",
         body: { permissionIds },
       }),
-      invalidatesTags: ["roles"],
+      invalidatesTags: ["roles", "myPermissions"],
     }),
 
     /** Permissions grouped by module. The page size counts modules, not permissions. */
@@ -82,7 +89,7 @@ export const accessApi = apiClient.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["permissions", "roles"],
+      invalidatesTags: ["permissions", "roles", "myPermissions"],
     }),
 
     updatePermission: builder.mutation<
@@ -94,12 +101,13 @@ export const accessApi = apiClient.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["permissions", "roles"],
+      invalidatesTags: ["permissions", "roles", "myPermissions"],
     }),
   }),
 });
 
 export const {
+  useGetMyPermissionsQuery,
   useGetRoleListQuery,
   useGetRoleByIdQuery,
   useCreateRoleMutation,

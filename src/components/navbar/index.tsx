@@ -11,11 +11,14 @@ import { logout } from "@/features/auth/authSlice";
 import { useSignOutMutation } from "@/features/auth/authAPI";
 import { useTheme } from "@/context/theme-provider";
 import NotificationBell from "../notifications/notification-bell";
-import { NAV_ROUTES } from "@/routes/nav-routes";
+import { getVisibleNavRoutes } from "@/routes/nav-routes";
+import usePermissions from "@/hooks/use-permissions";
 
 const Navbar = () => {
   const { pathname } = useLocation();
   const { user } = useTypedSelector((state) => state.auth);
+  const { can } = usePermissions();
+  const visibleRoutes = getVisibleNavRoutes(user?.roles ?? [], can);
 
   const { theme, setTheme } = useTheme();
 
@@ -46,7 +49,7 @@ const Navbar = () => {
       <header className="z-40 flex h-16 w-full shrink-0 items-center justify-between gap-x-6 border-b bg-background px-4 sm:px-6 lg:px-8">
         <NavLogoAndUser username={user?.unique_name} handleOpen={handleOpen} />
 
-        {/* Mobile Navigation — shares NAV_ROUTES with SideBar, so desktop
+        {/* Mobile Navigation — same filtered routes as the SideBar, so desktop
             and mobile nav can't drift out of sync. */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetContent side="left" className="pt-0">
@@ -54,7 +57,7 @@ const Navbar = () => {
               <Logo />
             </SheetHeader>
             <nav className="flex flex-col gap-y-2 px-3">
-              {NAV_ROUTES.map((route) => {
+              {visibleRoutes.map((route) => {
                 const Icon = route.icon;
                 return (
                   <NavLink

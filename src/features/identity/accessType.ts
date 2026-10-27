@@ -58,3 +58,8 @@ export interface UpsertPermissionRequest {
   name: string;
   description?: string | null;
 }
+
+export type MyPermissions = {
+  roles: string[];
+  permissions: string[];
+};

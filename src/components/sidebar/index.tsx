@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import usePermissions from "@/hooks/use-permissions";
 import {
   getVisibleNavSections,
 } from "@/routes/nav-routes";
@@ -37,7 +38,9 @@ const SideBar = () => {
 
   const userRoles = data?.user?.roles ?? [];
 
-  const navSections = getVisibleNavSections(userRoles);
+  const { can } = usePermissions();
+
+  const navSections = getVisibleNavSections(userRoles, can);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
