@@ -65,6 +65,7 @@ const toDefaultValues = (
   name: profile?.name ?? "",
   logoUrl: profile?.logoUrl ?? "",
   chatLink: profile?.chatLink ?? "",
+  pharmacyLicenseNumber: profile?.pharmacyLicenseNumber ?? "",
   phones: profile?.phones ?? [],
   emails: profile?.emails ?? [],
   addresses: profile?.addresses ?? [],
@@ -244,6 +245,17 @@ export const CompanyProfileForm = () => {
       const pharmacyLicenseFile =
         pharmacyLicenseFiles[0]?.file ?? null;
 
+      // A pharmacy must show its licence: a photo/scan, a number, or both.
+      if (
+        pharmacyLicenseFiles.length === 0 &&
+        !data.pharmacyLicenseNumber?.trim()
+      ) {
+        toast.error(
+          "Add the pharmacy licence: upload a photo or scan, or enter the licence number.",
+        );
+        return;
+      }
+
       try {
         await updateProfile({
           id: profile.id,
@@ -252,6 +264,9 @@ export const CompanyProfileForm = () => {
 
           chatLink:
             data.chatLink ?? undefined,
+
+          pharmacyLicenseNumber:
+            data.pharmacyLicenseNumber?.trim() ?? "",
 
           phones: data.phones,
 
@@ -491,6 +506,29 @@ export const CompanyProfileForm = () => {
                   multiple={false}
                   accept={LICENSE_ACCEPT}
                 />
+
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="license-number">
+                    Licence number
+                  </Label>
+
+                  <Input
+                    id="license-number"
+                    disabled={readOnly}
+                    placeholder="e.g. PPB/R/12345"
+                    {...register("pharmacyLicenseNumber")}
+                  />
+
+                  <p className="text-xs text-muted-foreground">
+                    Required if you don&apos;t upload a licence photo. Shown to customers when there is no photo.
+                  </p>
+
+                  {errors.pharmacyLicenseNumber && (
+                    <p className="text-xs text-destructive">
+                      {errors.pharmacyLicenseNumber.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>

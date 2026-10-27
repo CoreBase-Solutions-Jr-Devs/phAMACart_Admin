@@ -591,6 +591,9 @@ export const apiClient =
       "reports",
       "health",
       "searchInsights",
+      "myPermissions",
+      "sessions",
+      "featureFlags",
     ],
 
     endpoints: () => ({}),

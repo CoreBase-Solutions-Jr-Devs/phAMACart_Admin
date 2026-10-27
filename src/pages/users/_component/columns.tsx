@@ -4,9 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Edit,
   LockOpen,
+  LogOut,
   MoreHorizontal,
   Power,
   PowerOff,
+  ShieldMinus,
+  ShieldPlus,
   Trash2,
 } from "lucide-react";
 import {
@@ -17,12 +20,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { User } from "@/features/users/usersType";
+import { isStaffRole } from "@/lib/permissions";
 
 interface UserColumnOptions {
   onEdit: (user: User) => void;
   onDelete: (id: string) => void;
   onToggleStatus: (user: User) => void;
   onUnlock: (user: User) => void;
+  onPromote: (user: User) => void;
+  onDemote: (user: User) => void;
+  onSignOutEverywhere: (user: User) => void;
+  /** What the signed-in admin may do (from their permissions). */
+  allowed: {
+    manage: boolean;
+    remove: boolean;
+    promote: boolean;
+    revokeSessions: boolean;
+    /** Whether the admin may change this particular user's staff roles. */
+    canChangeStaff: (user: User) => boolean;
+  };
 }
 
 export const userColumns = ({
@@ -30,6 +46,10 @@ export const userColumns = ({
   onDelete,
   onToggleStatus,
   onUnlock,
+  onPromote,
+  onDemote,
+  onSignOutEverywhere,
+  allowed,
 }: UserColumnOptions): ColumnDef<User>[] => [
   /* =========================
      NAME
@@ -157,49 +177,80 @@ export const userColumns = ({
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onEdit(row.original)}
-        >
-          <Edit size={16} />
-        </Button>
+    cell: ({ row }) => {
+      const user = row.original;
+      const isStaff = (user.roles ?? []).some(isStaffRole);
+      const canChangeStaff = allowed.promote && allowed.canChangeStaff(user);
+      const hasMenu = allowed.manage || allowed.remove || canChangeStaff || allowed.revokeSessions;
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline" aria-label="More actions">
-              <MoreHorizontal size={16} />
+      return (
+        <div className="flex items-center gap-2">
+          {allowed.manage && (
+            <Button size="sm" variant="outline" onClick={() => onEdit(user)}>
+              <Edit size={16} />
             </Button>
-          </DropdownMenuTrigger>
+          )}
 
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => onToggleStatus(row.original)}>
-              {row.original.isActive ? (
-                <>
-                  <PowerOff size={14} /> Deactivate
-                </>
-              ) : (
-                <>
-                  <Power size={14} /> Reactivate
-                </>
-              )}
-            </DropdownMenuItem>
+          {hasMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" aria-label="More actions">
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
 
-            <DropdownMenuItem onSelect={() => onUnlock(row.original)}>
-              <LockOpen size={14} /> Unlock sign-in
-            </DropdownMenuItem>
+              <DropdownMenuContent align="end">
+                {canChangeStaff && (
+                  <DropdownMenuItem onSelect={() => onPromote(user)}>
+                    <ShieldPlus size={14} /> {isStaff ? "Change staff role" : "Promote to staff"}
+                  </DropdownMenuItem>
+                )}
 
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onSelect={() => onDelete(row.original.id)}
-            >
-              <Trash2 size={14} /> Delete permanently
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    ),
+                {canChangeStaff && isStaff && (
+                  <DropdownMenuItem onSelect={() => onDemote(user)}>
+                    <ShieldMinus size={14} /> Remove from staff
+                  </DropdownMenuItem>
+                )}
+
+                {allowed.revokeSessions && (
+                  <DropdownMenuItem onSelect={() => onSignOutEverywhere(user)}>
+                    <LogOut size={14} /> Sign out everywhere
+                  </DropdownMenuItem>
+                )}
+
+                {allowed.manage && (
+                  <DropdownMenuItem onSelect={() => onToggleStatus(user)}>
+                    {user.isActive ? (
+                      <>
+                        <PowerOff size={14} /> Deactivate
+                      </>
+                    ) : (
+                      <>
+                        <Power size={14} /> Reactivate
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                )}
+
+                {allowed.manage && (
+                  <DropdownMenuItem onSelect={() => onUnlock(user)}>
+                    <LockOpen size={14} /> Unlock sign-in
+                  </DropdownMenuItem>
+                )}
+
+                {allowed.remove && (
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => onDelete(user.id)}
+                  >
+                    <Trash2 size={14} /> Delete permanently
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      );
+    },
   },
 ];

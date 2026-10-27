@@ -33,6 +33,8 @@ export interface CompanyProfile {
   clientId: number;
   logoUrl?: string | null;
   pharmacyLicenseUrl?: string | null;
+  /** Shown when there is no licence photo. */
+  pharmacyLicenseNumber?: string | null;
   chatLink?: string | null;
   phones: PhoneEntry[];
   emails: EmailEntry[];

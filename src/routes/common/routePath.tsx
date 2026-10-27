@@ -17,6 +17,7 @@ export const PROTECTED_ROUTES = {
   AUDIT_LOGS: "/audit-logs",
   SYSTEM_HEALTH: "/system-health",
   TENANTS: "/tenants",
+  FEATURE_FLAGS: "/feature-flags",
   COMPANYPROFILE: "/company-profile",
   PRODUCTS: "/products",
   PRESCRIPTIONS: "/prescriptions",

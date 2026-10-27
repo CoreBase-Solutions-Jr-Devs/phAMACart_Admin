@@ -95,3 +95,53 @@ export interface PaginatedResult<T> {
   count: number;
   data: T[];
 }
+
+/* =========================================================
+ * STAFF (promote / demote)
+ * ========================================================= */
+
+export interface StaffChangeResult {
+  userId: string;
+  roles: string[];
+  sessionsRevoked: boolean;
+}
+
+export interface StaffMember {
+  userId: string;
+  userName?: string | null;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  staffRole: string;
+  roles: string[];
+  isLockedOut: boolean;
+  lastSignedInAt?: string | null;
+}
+
+/* =========================================================
+ * SESSIONS
+ * ========================================================= */
+
+export interface UserSession {
+  id: string;
+  userId: string;
+  userName?: string | null;
+  email?: string | null;
+  fullName?: string | null;
+  device?: string | null;
+  userAgent?: string | null;
+  ipAddress?: string | null;
+  workspace?: string | null;
+  createdAtUtc?: string | null;
+  expiresAtUtc: string;
+  isActive: boolean;
+  isRevoked: boolean;
+  revokedAtUtc?: string | null;
+}
+
+export interface SessionSearchRequest {
+  searchTerm?: string;
+  activeOnly?: boolean;
+  pageIndex?: number;
+  pageSize?: number;
+}

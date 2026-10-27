@@ -21,7 +21,12 @@ import {
   useDeleteUserMutation,
   useSetUserStatusMutation,
   useUnlockUserMutation,
+  useDemoteUserMutation,
+  useRevokeAllUserSessionsMutation,
 } from "@/features/users/usersAPI";
+import usePermissions from "@/hooks/use-permissions";
+import { PERMISSIONS, canGrantRole, isStaffRole } from "@/lib/permissions";
+import { PromoteUserDialog } from "./promote-user-dialog";
 
 import { User } from "@/features/users/usersType";
 import { parseError } from "@/lib/parse-error";
@@ -204,6 +209,33 @@ const UsersTable = () => {
   };
 
   /* =========================
+     STAFF / SESSIONS
+  ========================= */
+
+  const { can, roles: myRoles } = usePermissions();
+  const [promoteTarget, setPromoteTarget] = useState<User | null>(null);
+  const [demoteUser] = useDemoteUserMutation();
+  const [revokeAll] = useRevokeAllUserSessionsMutation();
+
+  const handleDemote = async (user: User) => {
+    try {
+      await demoteUser(user.id).unwrap();
+      toast.success(`${user.userName} is no longer staff and has been signed out.`);
+    } catch (err) {
+      toast.error(parseError(err));
+    }
+  };
+
+  const handleSignOutEverywhere = async (user: User) => {
+    try {
+      const res = await revokeAll(user.id).unwrap();
+      toast.success(`Signed ${user.userName} out of ${res.revoked} session(s).`);
+    } catch (err) {
+      toast.error(parseError(err));
+    }
+  };
+
+  /* =========================
      COLUMNS
   ========================= */
 
@@ -212,6 +244,17 @@ const UsersTable = () => {
     onDelete: handleDelete,
     onToggleStatus: handleToggleStatus,
     onUnlock: handleUnlock,
+    onPromote: setPromoteTarget,
+    onDemote: handleDemote,
+    onSignOutEverywhere: handleSignOutEverywhere,
+    allowed: {
+      manage: can(PERMISSIONS.USERS_MANAGE),
+      remove: can(PERMISSIONS.USERS_DELETE),
+      promote: can(PERMISSIONS.USERS_PROMOTE),
+      revokeSessions: can(PERMISSIONS.SESSIONS_REVOKE),
+      canChangeStaff: (user) =>
+        (user.roles ?? []).filter(isStaffRole).every((r) => canGrantRole(myRoles, r)),
+    },
   });
 
   return (
@@ -234,14 +277,16 @@ const UsersTable = () => {
           className="max-w-sm"
         />
 
-        <CreateUserFormDialog
-          onUserCreated={handleUserCreated}
-        >
-          <Button className="pr-7!">
-            <PlusIcon />
-            Create User
-          </Button>
-        </CreateUserFormDialog>
+        {can(PERMISSIONS.USERS_MANAGE) && (
+          <CreateUserFormDialog
+            onUserCreated={handleUserCreated}
+          >
+            <Button className="pr-7!">
+              <PlusIcon />
+              Create User
+            </Button>
+          </CreateUserFormDialog>
+        )}
       </div>
 
       {/* =========================
@@ -269,6 +314,23 @@ const UsersTable = () => {
         user={selectedUser ?? undefined}
         open={isEditDialogOpen}
         onOpenChange={handleEditDialogChange}
+      />
+
+      {/* =========================
+          PROMOTE TO STAFF
+      ========================= */}
+
+      <PromoteUserDialog
+        user={
+          promoteTarget
+            ? {
+                id: promoteTarget.id,
+                name: promoteTarget.userName,
+                roles: promoteTarget.roles ?? [],
+              }
+            : null
+        }
+        onOpenChange={(open) => !open && setPromoteTarget(null)}
       />
 
       {/* =========================

@@ -20,14 +20,19 @@ import {
   ScrollText,
   Activity,
   Network,
+  ToggleRight,
 } from "lucide-react";
 
 import { PROTECTED_ROUTES } from "@/routes/common/routePath";
+import { PERMISSIONS, PLATFORM_ROLES, hasRole } from "@/lib/permissions";
 
 export type NavRoute = {
   icon: LucideIcon;
   href: string;
   label: string;
+  /** Visible when the user holds any of these permissions. */
+  permission?: string | string[];
+  /** Visible when the user holds any of these roles (platform pages). */
   roles?: string[];
 };
 
@@ -61,16 +66,19 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ShoppingBag,
         href: PROTECTED_ROUTES.PRODUCTS,
         label: "Products",
+        permission: PERMISSIONS.CATALOG_VIEW,
       },
       {
         icon: Bookmark,
         href: PROTECTED_ROUTES.BRANDS,
         label: "Brands",
+        permission: PERMISSIONS.CATALOG_VIEW,
       },
       {
         icon: Layers,
         href: PROTECTED_ROUTES.CATEGORIES,
         label: "Categories",
+        permission: PERMISSIONS.CATALOG_VIEW,
       },
     ],
   },
@@ -82,11 +90,13 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ShoppingCart,
         href: PROTECTED_ROUTES.ORDERS,
         label: "Orders",
+        permission: PERMISSIONS.ORDERS_VIEW,
       },
       {
         icon: FileText,
         href: PROTECTED_ROUTES.PRESCRIPTIONS,
         label: "Prescriptions",
+        permission: PERMISSIONS.PRESCRIPTIONS_VIEW,
       },
     ],
   },
@@ -98,11 +108,13 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Megaphone,
         href: PROTECTED_ROUTES.BANNER,
         label: "Banners",
+        permission: PERMISSIONS.BANNERS_MANAGE,
       },
       {
         icon: SearchCheck,
         href: PROTECTED_ROUTES.SEARCH_INSIGHTS,
         label: "Search Insights",
+        permission: PERMISSIONS.SEARCH_INSIGHTS_VIEW,
       },
     ],
   },
@@ -114,26 +126,31 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Building,
         href: PROTECTED_ROUTES.STORES,
         label: "Stores",
+        permission: PERMISSIONS.STORES_MANAGE,
       },
       {
         icon: BusFront,
         href: PROTECTED_ROUTES.DELIVERYSETTINGS,
         label: "Delivery Settings",
+        permission: PERMISSIONS.DELIVERY_MANAGE,
       },
       {
         icon: Building2,
         href: PROTECTED_ROUTES.COMPANYPROFILE,
         label: "Company Profile",
+        permission: PERMISSIONS.COMPANY_PROFILE_MANAGE,
       },
       {
         icon: Plug,
         href: PROTECTED_ROUTES.INTEGRATIONS,
         label: "Integrations",
+        permission: PERMISSIONS.INTEGRATIONS_MANAGE,
       },
       {
         icon: ClipboardMinus,
         href: PROTECTED_ROUTES.REPORTS,
         label: "Reports",
+        permission: PERMISSIONS.REPORTS_VIEW,
       },
       {
         icon: Settings2,
@@ -147,16 +164,22 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Administration",
     routes: [
       {
+        icon: UserCheck,
+        href: PROTECTED_ROUTES.USERS,
+        label: "Users & Sessions",
+        permission: [PERMISSIONS.USERS_VIEW, PERMISSIONS.SESSIONS_VIEW],
+      },
+      {
         icon: ShieldCheck,
         href: PROTECTED_ROUTES.ACCESS,
         label: "Roles & Permissions",
-        roles: ["SuperAdmin", "Admin", "Dev", "Support"],
+        permission: PERMISSIONS.ROLES_VIEW,
       },
       {
         icon: ScrollText,
         href: PROTECTED_ROUTES.AUDIT_LOGS,
         label: "Audit Logs",
-        roles: ["SuperAdmin", "Admin", "Dev", "Support"],
+        permission: PERMISSIONS.AUDIT_VIEW,
       },
       {
         icon: Activity,
@@ -174,20 +197,21 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Network,
         href: PROTECTED_ROUTES.TENANTS,
         label: "Tenants",
-        roles: ["Dev", "Support"],
+        roles: [PLATFORM_ROLES.DEV, PLATFORM_ROLES.SUPPORT],
       },
       {
         icon: ServerCog,
         href: PROTECTED_ROUTES.TENANTPROVISION,
         label: "Provision Tenant",
-        roles: ["Dev", "Support"],
+        // Only developers may create tenants (API policy "ProvisionTenant").
+        roles: [PLATFORM_ROLES.DEV],
       },
       {
-        icon: UserCheck,
-        href: PROTECTED_ROUTES.USERS,
-        label: "Users",
-        roles: ["Dev", "Support"],
-      }
+        icon: ToggleRight,
+        href: PROTECTED_ROUTES.FEATURE_FLAGS,
+        label: "Feature Toggles",
+        roles: [PLATFORM_ROLES.DEV],
+      },
     ],
   },
 ];
@@ -202,23 +226,18 @@ export const NAV_ROUTES: NavRoute[] = NAV_SECTIONS.flatMap(
 /**
  * Determines whether a user can see a navigation route.
  *
- * Routes without a roles property are visible to everyone.
+ * Routes with neither `permission` nor `roles` are visible to everyone.
  */
 export const hasNavAccess = (
-  routeRoles: string[] | undefined,
+  route: Pick<NavRoute, "permission" | "roles">,
   userRoles: string[],
+  can: (permission: string | string[] | undefined) => boolean,
 ): boolean => {
-  if (!routeRoles?.length) {
-    return true;
+  if (route.roles?.length && !hasRole(userRoles, route.roles)) {
+    return false;
   }
 
-  const normalizedUserRoles = userRoles.map((role) =>
-    role.trim().toLowerCase(),
-  );
-
-  return routeRoles.some((role) =>
-    normalizedUserRoles.includes(role.trim().toLowerCase()),
-  );
+  return can(route.permission);
 };
 
 /**
@@ -228,11 +247,12 @@ export const hasNavAccess = (
  */
 export const getVisibleNavSections = (
   userRoles: string[],
+  can: (permission: string | string[] | undefined) => boolean,
 ): NavSection[] => {
   return NAV_SECTIONS.map((section) => ({
     ...section,
     routes: section.routes.filter((route) =>
-      hasNavAccess(route.roles, userRoles),
+      hasNavAccess(route, userRoles, can),
     ),
   })).filter((section) => section.routes.length > 0);
 };
@@ -242,8 +262,9 @@ export const getVisibleNavSections = (
  */
 export const getVisibleNavRoutes = (
   userRoles: string[],
+  can: (permission: string | string[] | undefined) => boolean,
 ): NavRoute[] => {
   return NAV_ROUTES.filter((route) =>
-    hasNavAccess(route.roles, userRoles),
+    hasNavAccess(route, userRoles, can),
   );
 };
