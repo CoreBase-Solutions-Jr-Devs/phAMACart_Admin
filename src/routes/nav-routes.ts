@@ -20,6 +20,7 @@ import {
   ScrollText,
   Activity,
   Network,
+  ToggleRight,
 } from "lucide-react";
 
 import { PROTECTED_ROUTES } from "@/routes/common/routePath";
@@ -203,6 +204,12 @@ export const NAV_SECTIONS: NavSection[] = [
         href: PROTECTED_ROUTES.TENANTPROVISION,
         label: "Provision Tenant",
         // Only developers may create tenants (API policy "ProvisionTenant").
+        roles: [PLATFORM_ROLES.DEV],
+      },
+      {
+        icon: ToggleRight,
+        href: PROTECTED_ROUTES.FEATURE_FLAGS,
+        label: "Feature Toggles",
         roles: [PLATFORM_ROLES.DEV],
       },
     ],

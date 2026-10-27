@@ -21,6 +21,7 @@ import AccessControl from "@/pages/access";
 import AuditLogs from "@/pages/audit";
 import SystemHealth from "@/pages/system-health";
 import Tenants from "@/pages/tenants";
+import FeatureFlags from "@/pages/feature-flags";
 import PermissionGate from "@/components/permission-gate";
 import { PERMISSIONS, PLATFORM_ROLES } from "@/lib/permissions";
 import type { ReactNode } from "react";
@@ -72,6 +73,11 @@ export const devSupportRoutePaths = [
     path: PROTECTED_ROUTES.TENANTPROVISION,
     // API policy "ProvisionTenant": developers only.
     element: guard(<TenantProvision />, undefined, [PLATFORM_ROLES.DEV]),
+  },
+  {
+    path: PROTECTED_ROUTES.FEATURE_FLAGS,
+    // API policy "ManageFeatures": developers only.
+    element: guard(<FeatureFlags />, undefined, [PLATFORM_ROLES.DEV]),
   },
   {
     path: PROTECTED_ROUTES.TENANTS,
